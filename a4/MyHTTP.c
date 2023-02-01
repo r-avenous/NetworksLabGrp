@@ -9,6 +9,11 @@
 #include <poll.h>
 #include <time.h>
 
+#define NOTFOUND 404
+#define OK 200
+#define BADREQUEST 400
+#define FORBIDDEN 403
+
 #define LOCAL "127.0.0.1"
 #define MAXLINE 10
 #define MAXCONNECTIONS 5
