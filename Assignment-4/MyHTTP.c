@@ -14,7 +14,7 @@
 #define BADREQUEST 400
 #define FORBIDDEN 403
 
-#define LOCAL "127.0.0.1"
+#define LOCALHOST "127.0.0.1"
 #define MAXLINE 10
 #define MAXCONNECTIONS 5
 #define DURATION 5000
