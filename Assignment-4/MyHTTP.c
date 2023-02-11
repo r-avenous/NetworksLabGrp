@@ -41,11 +41,15 @@ void receive_in_packets(int sockfd, char *buf, int size){
 
         // for(int i=0; i<bytes; ++i) printf("%d ", *(buf+bytes_received+i));
         // printf("\n"); fflush(stdout);
+        printf("%s", buf+bytes_received);
+
+        
 
         bytes_received += bytes;
         if(buf[bytes_received-1] == '\0'){
             break;
         }
+
 
         
     }
@@ -69,7 +73,7 @@ int main(){
 
 	serv_addr.sin_family = AF_INET;			// the internet family
 	serv_addr.sin_addr.s_addr = INADDR_ANY;	// set to INADDR_ANY for machines having a single IP address
-	serv_addr.sin_port = htons(8000);		// specifies the port number of the server
+	serv_addr.sin_port = htons(8050);		// specifies the port number of the server
 
 
 	// bind() function to provide local address to the socket
@@ -104,6 +108,10 @@ int main(){
 		
 		send(newsockfd, "REQUEST RECEIVED", 17, 0);	// send the current time
 		close(newsockfd);
+
 	}
 	return 0;
 }
+
+
+

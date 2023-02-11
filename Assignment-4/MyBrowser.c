@@ -62,7 +62,7 @@ void get(char *url){
     printf("\n\n%s\n\n", http_request);
 
 
-    strcpy(server_ip, url+7);  // GET http://127.0.0.1/hello.txt
+    strcpy(server_ip, url+7);  // GET http://127.0.0.1:8000/ 
 
     for(int i=0; i<16; i++){
         if(server_ip[i]!='.' && (server_ip[i]<'0' || server_ip[i]>'9')){
@@ -96,8 +96,8 @@ void get(char *url){
 
     send(sockfd, http_request, strlen(http_request)+1, 0);
 
-    char response[1000];
-    recv(sockfd, response, 1000, 0);
+    char response[10000];
+    recv(sockfd, response, 10000, MSG_WAITALL);
     printf("%s\n", response);
 
     close(sockfd);
@@ -125,6 +125,12 @@ void get_to_request(const char *url, char *request) {
   
   // Get the host from the URL
   sscanf(url, "http://%s", host);
+  for(int i=0; i<100; i++){
+      if(host[i]=='/' || host[i]=='\0'){
+          host[i]='\0';
+          break;
+      }
+  }
   
   // Get the file extension from the URL
   file_extension = strrchr(url, '.');
@@ -142,11 +148,11 @@ void get_to_request(const char *url, char *request) {
   } else if (strcmp(file_extension, ".jpg") == 0) {
     strcpy(accept, "Accept: image/jpeg\r\n");
   } else {
-    strcpy(accept, "Accept: text/*\r\n");
+    strcpy(accept, "Accept: */*\r\n");
   }
   
   // Set the Accept-Language header
-  strcpy(accept_language, "Accept-Language: en-us,en;q=0.9\r\n");
+  strcpy(accept_language, "Accept-Language: en-us\r\n");
   
   // Set the If-Modified-Since header
   tm->tm_mday -= 2;
@@ -156,9 +162,10 @@ void get_to_request(const char *url, char *request) {
   
   // Construct the request message
   
-  sprintf(request, "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\nDate: %s\r\n%s%s%s\r\n",
+  sprintf(request, "GET %s HTTP/1.1\r\nHost: %s\r\nDate: %s\r\n%s%s%sConnection: close\r\n\r\n",
           url, host, date, accept, accept_language, if_modified_since);
 
 }
 
 
+// GET http://127.0.0.1:8000
