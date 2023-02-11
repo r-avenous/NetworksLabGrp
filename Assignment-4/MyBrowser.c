@@ -26,6 +26,8 @@ void set_content_type(const char *accept, char *content_type); // sets conent ty
 
 int main()
 {
+
+
     // assumed url max size
     char cmd[4], url[100], filename[100];
     while(1){
@@ -54,9 +56,53 @@ int main()
 
 // Implements GET {url}
 void get(char *url){
-    char request[1000];
-    get_to_request(url, request);
-    printf("%s\n", request);
+    char http_request[10000], server_ip[16];
+
+    get_to_request(url, http_request);
+    printf("\n\n%s\n\n", http_request);
+
+
+    strcpy(server_ip, url+7);  // GET http://127.0.0.1/hello.txt
+
+    for(int i=0; i<16; i++){
+        if(server_ip[i]!='.' && (server_ip[i]<'0' || server_ip[i]>'9')){
+            server_ip[i]='\0';
+            break;
+        }
+    }
+    printf("SERVER IP = %s\n", server_ip);
+
+
+    int sockfd;
+    struct sockaddr_in	serv_addr;
+
+    // Opening a new socket is exactly similar to the server process 
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+      perror("Unable to create socket\n");
+      exit(0);
+    }
+
+
+    serv_addr.sin_family = AF_INET;	
+    inet_aton(server_ip, &serv_addr.sin_addr);
+    serv_addr.sin_port	= htons(8000);
+
+    int status = connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
+    if (status < 0) {
+        perror("Unable to connect to server\n");
+        exit(0);
+    }
+
+
+    send(sockfd, http_request, strlen(http_request)+1, 0);
+
+    char response[1000];
+    recv(sockfd, response, 1000, 0);
+    printf("%s\n", response);
+
+    close(sockfd);
+
+    return;
 }  
 
 // Implements PUT {url} <filename>
@@ -75,9 +121,7 @@ void get_to_request(const char *url, char *request) {
   char accept[100];
   char accept_language[100];
   char if_modified_since[100];
-  char content_language[100];
-  char content_length[100];
-  char content_type[100];
+
   
   // Get the host from the URL
   sscanf(url, "http://%s", host);
@@ -108,31 +152,13 @@ void get_to_request(const char *url, char *request) {
   tm->tm_mday -= 2;
   strftime(if_modified_since, sizeof(if_modified_since), "If-Modified-Since: %a, %d %b %Y %H:%M:%S %Z\r\n", tm);
   
-  // Set the Content-Language header
-  strcpy(content_language, "Content-Language: en-us\r\n");
-  
-  // Set the Content-Length header
-  strcpy(content_length, "Content-Length: 0\r\n");
 
-  // Set the Content-Type header
-  set_content_type(accept, content_type);
   
   // Construct the request message
-  sprintf(request, "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\nDate: %s\r\n%s%s%s%s%s%s\r\n",
-          url, host, date, accept, accept_language, if_modified_since, content_language, content_length, content_type);
+  
+  sprintf(request, "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\nDate: %s\r\n%s%s%s\r\n",
+          url, host, date, accept, accept_language, if_modified_since);
+
 }
 
 
-void set_content_type(const char *accept, char *content_type) {
-  if (strstr(accept, "text/html")) {
-    strcpy(content_type, "Content-Type: text/html; charset=ISO-8859-4\r\n");
-  } else if (strstr(accept, "application/pdf")) {
-    strcpy(content_type, "Content-Type: application/pdf\r\n");
-  } else if (strstr(accept, "image/jpeg")) {
-    strcpy(content_type, "Content-Type: image/jpeg\r\n");
-  } else if (strstr(accept, "text/*")) {
-    strcpy(content_type, "Content-Type: text/plain; charset=ISO-8859-4\r\n");
-  } else {
-    strcpy(content_type, "Content-Type: \r\n");
-  }
-}
