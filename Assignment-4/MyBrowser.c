@@ -311,8 +311,12 @@ void put_to_request(char *url, char *filename, char *request)
     sprintf(content_length, "Content-Length: %d\r\n", size);
 
     // Construct the request message
-    sprintf(request, "PUT /%s HTTP/1.1\r\nHost: %s\r\nDate: %s\r\n%s%s%s%s\r\n",
-            path, host, date, accept, accept_language, last_modified, content_length);
+    if(strlen(path) == 0 || path[strlen(path) - 1] == '/')
+        sprintf(request, "PUT /%s%s HTTP/1.1\r\nHost: %s\r\nDate: %s\r\n%s%s%s%s\r\n",
+            path, filename, host, date, accept, accept_language, last_modified, content_length);
+    else
+        sprintf(request, "PUT /%s/%s HTTP/1.1\r\nHost: %s\r\nDate: %s\r\n%s%s%s%s\r\n",
+            path, filename, host, date, accept, accept_language, last_modified, content_length);
 }
 
 /*
