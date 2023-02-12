@@ -116,6 +116,29 @@ void get(char *url)
     // download function complete
     char response[MAXLINE];
     int r = recv(sockfd, response, MAXLINE, MSG_WAITALL);
+    // get status code
+    int status_code = atoi(response + 9);
+    if (status_code == NOTFOUND)
+    {
+        printf("404 Not Found\n");
+        return;
+    }
+    else if (status_code == BADREQUEST)
+    {
+        printf("400 Bad Request\n");
+        return;
+    }
+    else if (status_code == FORBIDDEN)
+    {
+        printf("403 Forbidden\n");
+        return;
+    }
+    else if (status_code != OK)
+    {
+        printf("Unknown Error\n");
+        return;
+    }
+
     printf("%s\n", response);
     char* pt = strstr(response, "Content-Length: ");
     int size = atoi(pt + 16);
@@ -170,7 +193,7 @@ void put(char *url, char *filename)
     }
 
     send(sockfd, http_request, strlen(http_request) + 1, 0);
-    // download function complete
+    // upload function complete
     upload_file(filename, sockfd);
     // -------
     close(sockfd);
