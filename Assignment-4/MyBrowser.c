@@ -23,7 +23,7 @@ void get(char *url);                                           // Implements GET
 void put(char *url, char *filename);                           // Implements PUT {url} <filename>
 void get_to_request(char *url, char *request);                 // converts get command to HTTP request
 void set_content_type(const char *accept, char *content_type); // sets conent type according to accept header
-void download_file(char* filename, int sockfd, int size, char* contentStart);   // writes content to file
+void download_file(char* filename, int sockfd, int size, char* contentStart, int contstartlen);   // writes content to file
 enum fileType {HTML, PDF, JPG, OTHER};   // file type enum
 int curfileType;                        // current file type
 char* curfilename;                      // current filename
@@ -111,6 +111,7 @@ void get(char *url)
 
     send(sockfd, http_request, strlen(http_request) + 1, 0);
 
+    // download function complete
     char response[MAXLINE];
     int r = recv(sockfd, response, MAXLINE, MSG_WAITALL);
     printf("%s\n", response);
@@ -119,7 +120,8 @@ void get(char *url)
     pt = strstr(response, "\r\n\r\n");
     pt += 4;
     size -= r - (pt - response);
-    download_file("curfilename", sockfd, size, pt);
+    download_file("curfilename", sockfd, size, pt, r - (pt - response));
+    // -------
     close(sockfd);
 
     return;
@@ -199,19 +201,22 @@ void get_to_request(char *url, char *request)
 
 /*
 GET http://127.0.0.1:8000/Hello.txt
+GET http://127.0.0.1:8000/queries.sql
+GET http://127.0.0.1:8000/Assgn-3.pdf
 */
 
-void download_file(char* filename, int sockfd, int size, char* content)
+void download_file(char* filename, int sockfd, int size, char* content, int contstartlen)
 {
     FILE *fp;
     fp = fopen(filename, "wb");
-    fprintf(fp, "%s", content);
+    fwrite(content, contstartlen, 1, fp);
     int r = 0;
     while (r < size)
     {
-        char buffer[MAXLINE];
+        char buffer[MAXLINE+1];
         int n = recv(sockfd, buffer, MAXLINE, MSG_WAITALL);
-        fprintf(fp, "%s", buffer);
+        buffer[n] = '\0';
+        fwrite(buffer, n, 1, fp);
         r += n;
     }
     fclose(fp);
