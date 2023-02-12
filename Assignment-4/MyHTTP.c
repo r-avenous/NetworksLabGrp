@@ -25,10 +25,11 @@ int min( int a, int b){
     if(a<b) return a;
     return b;
 }
-void receive_in_packets(int sockfd, char *buf, int size){
+void receive_request_headers(int sockfd, char *buf, int size){
     const int PACKET_SIZE = 4;
     int bytes_received = 0;
     buf[0] = '\0';
+	int line_break=0, end_of_req=0;
     while(bytes_received < size){
         int bytes = recv(sockfd, buf + bytes_received, min(size - bytes_received, PACKET_SIZE), 0);
         if(bytes == -1){
@@ -41,25 +42,46 @@ void receive_in_packets(int sockfd, char *buf, int size){
 
         // for(int i=0; i<bytes; ++i) printf("%d ", *(buf+bytes_received+i));
         // printf("\n"); fflush(stdout);
-        printf("%s", buf+bytes_received);
+        // printf("%s", buf+bytes_received);
 
-        
+		for(int i=0; i<bytes; ++i){
+			char ch = buf[bytes_received+i];
+			if(ch==' ' || ch=='\t' || ch=='\r')
+				continue;
+
+			if(ch=='\n'){
+				line_break++;
+				if(line_break==2){
+					end_of_req=1;
+					break;
+				}
+			}
+			else{
+				line_break=0;
+			}
+
+		}
+
+		if(end_of_req) break;
 
         bytes_received += bytes;
         if(buf[bytes_received-1] == '\0'){
             break;
         }
-
-
         
     }
 }
 
 
-int main(){
+int main(int argc, char **argv){
 	int	sockfd, newsockfd;		// socket descriptors 
 	int	clilen;
 	struct sockaddr_in	cli_addr, serv_addr;
+	int port_no = 8080;		// port number on which server accepts connections
+
+	if(argc > 1){
+		port_no = atoi(argv[1]);
+	}
 	
 
 	int i, status;				// status variable for bind() function
@@ -73,7 +95,7 @@ int main(){
 
 	serv_addr.sin_family = AF_INET;			// the internet family
 	serv_addr.sin_addr.s_addr = INADDR_ANY;	// set to INADDR_ANY for machines having a single IP address
-	serv_addr.sin_port = htons(8050);		// specifies the port number of the server
+	serv_addr.sin_port = htons(port_no);		// specifies the port number of the server
 
 
 	// bind() function to provide local address to the socket
@@ -85,7 +107,7 @@ int main(){
 
 	// Specifies that upto 5 active clients can wait for a connection
 	listen(sockfd, 5); 
-    printf("Server is listening on port 8080....\n");
+    printf("Server is listening on port %d....\n", port_no);
 
 	while(1) {
 		// accept() function waits until a client connects to the server and then sending/receiving pf data occurs
@@ -100,7 +122,7 @@ int main(){
 		}
 
         // receive the request from the client
-        receive_in_packets(newsockfd, buf, BUF_SIZE);
+        receive_request_headers(newsockfd, buf, BUF_SIZE);
 
         printf("Request received:\n %s\n", buf);
         fflush(stdout);

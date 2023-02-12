@@ -112,7 +112,7 @@ void get(char *url)
     send(sockfd, http_request, strlen(http_request) + 1, 0);
 
     char response[100000];
-    recv(sockfd, response, 10000, MSG_WAITALL);
+    recv(sockfd, response, 10000, MSG_WAITALL); ///////////////
     printf("%s\n", response);
     char* content = strstr(response, "\r\n\r\n");
     content += 4;
