@@ -96,7 +96,7 @@ void receive_headers(int sockfd, char *buf, int size)
 }
 
 
-void parse_headers(char *request, char *method, char *path, char *values[])
+void parse_headers(char *request)
 {
 	char *version; int header_count; char **headers;
 	method = strsep(&request, " ");
@@ -110,7 +110,6 @@ void parse_headers(char *request, char *method, char *path, char *values[])
 	if(strcmp(method, "GET")==0){	///////////
 		header_count = header_count_get;
 		headers = headers_get;
-		values = values_get;
 	}
 
 	for(int i = 0; i < header_count; i++){
@@ -125,7 +124,6 @@ void parse_headers(char *request, char *method, char *path, char *values[])
 		values[i] = strsep(&header_ptr, "\r\n");
 
 	}
-
 
 	for(int i=0; i<header_count; ++i){
 		printf("%s %s\n", headers[i], values[i]);

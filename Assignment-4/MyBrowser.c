@@ -15,7 +15,7 @@
 #define FORBIDDEN 403
 
 #define LOCALHOST "127.0.0.1"
-#define MAXLINE 1000
+#define MAXLINE 1500
 #define MAXCONNECTIONS 5
 #define DURATION 5000
 
@@ -100,7 +100,7 @@ void get(char *url)
 
     serv_addr.sin_family = AF_INET;
     inet_aton(server_ip, &serv_addr.sin_addr);
-    serv_addr.sin_port = htons(8000);
+    serv_addr.sin_port = htons(80);
 
     int status = connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
     if (status < 0)
@@ -242,3 +242,5 @@ void download_file(char* filename, int sockfd, int size, char* content, int cont
         exit(0);
     }
 }
+
+// GET http://203.110.245.250:80/~agupta/networks/index.html

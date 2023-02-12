@@ -12,4 +12,9 @@
 
 int header_count_get = 6;
 char *headers_get[] = {"Host:", "Date:", "Accept:", "Accept-Language:", "If-Modified-Since:", "Connection:" };
-char *values_get[] = {NULL, NULL, NULL, NULL, NULL, NULL};
+
+
+char *values[10];
+char *method;
+char *path;
+
