@@ -15,7 +15,7 @@
 #define FORBIDDEN 403
 
 #define LOCALHOST "127.0.0.1"
-#define MAXLINE 10
+#define MAXLINE 1000
 #define MAXCONNECTIONS 5
 #define DURATION 5000
 
@@ -23,7 +23,7 @@ void get(char *url);                                           // Implements GET
 void put(char *url, char *filename);                           // Implements PUT {url} <filename>
 void get_to_request(char *url, char *request);                 // converts get command to HTTP request
 void set_content_type(const char *accept, char *content_type); // sets conent type according to accept header
-void download_file(char* filename, char* content);   // writes content to file
+void download_file(char* filename, int sockfd, int size, char* contentStart);   // writes content to file
 enum fileType {HTML, PDF, JPG, OTHER};   // file type enum
 int curfileType;                        // current file type
 char* curfilename;                      // current filename
@@ -111,13 +111,15 @@ void get(char *url)
 
     send(sockfd, http_request, strlen(http_request) + 1, 0);
 
-    char response[100000];
-    recv(sockfd, response, 10000, MSG_WAITALL); ///////////////
+    char response[MAXLINE];
+    int r = recv(sockfd, response, MAXLINE, MSG_WAITALL);
     printf("%s\n", response);
-    char* content = strstr(response, "\r\n\r\n");
-    content += 4;
-    download_file("curfilename", content);
-
+    char* pt = strstr(response, "Content-Length: ");
+    int size = atoi(pt + 16);
+    pt = strstr(response, "\r\n\r\n");
+    pt += 4;
+    size -= r - (pt - response);
+    download_file("curfilename", sockfd, size, pt);
     close(sockfd);
 
     return;
@@ -199,34 +201,35 @@ void get_to_request(char *url, char *request)
 GET http://127.0.0.1:8000/Hello.txt
 */
 
-void download_file(char* filename, char* content)
+void download_file(char* filename, int sockfd, int size, char* content)
 {
+    FILE *fp;
+    fp = fopen(filename, "wb");
+    fprintf(fp, "%s", content);
+    int r = 0;
+    while (r < size)
+    {
+        char buffer[MAXLINE];
+        int n = recv(sockfd, buffer, MAXLINE, MSG_WAITALL);
+        fprintf(fp, "%s", buffer);
+        r += n;
+    }
+    fclose(fp);
+
     if(curfileType == OTHER)
     {
-        FILE *fp;
-        fp = fopen(filename, "w");
-        fprintf(fp, "%s", content);
-        fclose(fp);
+        
     }
     else if(curfileType == HTML)
     {
-        FILE *fp;
-        fp = fopen(filename, "w");
-        fprintf(fp, "%s", content);
-        fclose(fp);
+        
     }
     else if(curfileType == PDF)
     {
-        FILE *fp;
-        fp = fopen(filename, "wb");
-        fprintf(fp, "%s", content);
-        fclose(fp);
+    
     }
     else if(curfileType == JPG)
     {
-        FILE *fp;
-        fp = fopen(filename, "wb");
-        fprintf(fp, "%s", content);
-        fclose(fp);
+        
     }
 }
