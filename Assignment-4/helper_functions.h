@@ -131,3 +131,93 @@ void parse_headers(char *request)
 
 	return;
 }
+
+char *get_content_type(char *path){
+	char *ext = strrchr(path, '.');
+	if (ext == NULL) return "Content-Type: text/*\r\n";
+	if (strcmp(ext, ".html")==0) return "Content-Type: text/html\r\n";
+	if(strcmp(ext, ".pdf")==0) return "Content-Type: application/pdf\r\n";
+	if(strcmp(ext, ".jpg")==0) return "Content-Type: image/jpeg\r\n";
+
+	return "Content-Type: text/*\r\n";
+}
+
+void send_file(FILE *fp, char *filename, int newsockfd){
+
+	// Send the content type
+	char *content_type = get_content_type(filename);
+	send(newsockfd, content_type, strlen(content_type), 0);	// send the content type
+
+
+	// Send the content length
+	fseek(fp, 0L, SEEK_END);
+	int size = ftell(fp);
+	fseek(fp, 0L, SEEK_SET);
+
+
+	char content_len[30]; 
+	sprintf(content_len, "Content-Length: %d", size);
+	strcat(content_len, "\r\n\r\n");
+	send(newsockfd, content_len, strlen(content_len), 0);	// send the content length
+
+
+	char content[101];
+	int sent_size=0, read_size, total_read_size=0;
+	while((read_size = fread(content,1,100,fp))!= 0){
+		total_read_size += read_size;
+		int count = send(newsockfd, content, read_size, 0);
+		sent_size += count;
+	}
+
+	printf("\n\nFile sent\n");
+	printf("Sent size: %d\n", sent_size); 
+	printf("Total read size: %d\n\n", total_read_size);
+	fflush(stdout);
+}
+
+void implement_GET(char *path, char **values, int newsockfd){
+	// putting a '.' before the path
+	char *modified_path = (char *)malloc(sizeof(char)*(sizeof(path)+1));
+	strcpy(modified_path, "."); strcat(modified_path, path);
+
+	printf("\n\nSending: %s\n\n", modified_path); fflush(stdout);
+	FILE *fp = fopen(modified_path, "r");
+	if (fp == NULL) {
+		//File could not be opened
+		perror("Could not open file\n");
+		char *response_404 = "HTTP/1.1 404 Not Found\r\n";
+		send(newsockfd, response_404, strlen(response_404), 0);
+		return;
+	}
+
+	// File Found
+	char date[100];
+    time_t now;
+    struct tm *tm;
+
+	// send the version and status code
+	char *first_line = "HTTP/1.1 200 OK\r\n";  
+	send(newsockfd, first_line, strlen(first_line), 0);	
+
+
+	// Send the current date and time
+    time(&now);
+    tm = gmtime(&now);
+    strftime(date, sizeof(date), "Date: %a, %d %b %Y %H:%M:%S %Z\r\n", tm); 
+
+	send(newsockfd, date, strlen(date), 0);	// send the date
+
+
+	// Send the server name
+	char *server_name = "Server: MyBrowser/100.29.12\r\n";
+	send(newsockfd, server_name, strlen(server_name), 0);	// send the server name
+
+	// Send the file type, length and content
+	send_file(fp, path, newsockfd);
+
+	//send(newsockfd, response, strlen(response), 0);
+	
+
+	fclose(fp);
+
+}
