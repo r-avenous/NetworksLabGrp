@@ -175,6 +175,35 @@ void send_file(FILE *fp, char *filename, int newsockfd){
 	fflush(stdout);
 }
 
+void send_general_response(int status_code, int newsockfd){
+	char date[100];
+	time_t now;
+	struct tm *tm;
+	char *first_line;
+
+	if(status_code==200){
+		first_line = "HTTP/1.1 200 OK\r\n";  
+	}
+	else if(status_code==404){
+		first_line = "HTTP/1.1 404 Not Found\r\n";
+	}
+
+	// send the first line
+	send(newsockfd, first_line, strlen(first_line), 0);	
+
+
+	// Send the current date and time
+    time(&now);
+    tm = gmtime(&now);
+    strftime(date, sizeof(date), "Date: %a, %d %b %Y %H:%M:%S %Z\r\n", tm); 
+	send(newsockfd, date, strlen(date), 0);	// send the date
+
+
+	// Send the server name
+	char *server_name = "Server: MyBrowser/100.29.12\r\n";
+	send(newsockfd, server_name, strlen(server_name), 0);	// send the server name
+}
+
 void implement_GET(char *path, char **values, int newsockfd){
 	// putting a '.' before the path
 	char *modified_path = (char *)malloc(sizeof(char)*(sizeof(path)+1));
@@ -183,39 +212,21 @@ void implement_GET(char *path, char **values, int newsockfd){
 	printf("\n\nSending: %s\n\n", modified_path); fflush(stdout);
 	FILE *fp = fopen(modified_path, "r");
 	if (fp == NULL) {
-		//File could not be opened
+		//File could not be opened(Probably not found)
 		perror("Could not open file\n");
-		char *response_404 = "HTTP/1.1 404 Not Found\r\n";
-		send(newsockfd, response_404, strlen(response_404), 0);
+		send_general_response(404, newsockfd);
+		fp = fopen("404.html", "r");
+		send_file(fp, "404.html", newsockfd);
 		return;
 	}
 
 	// File Found
-	char date[100];
-    time_t now;
-    struct tm *tm;
-
-	// send the version and status code
-	char *first_line = "HTTP/1.1 200 OK\r\n";  
-	send(newsockfd, first_line, strlen(first_line), 0);	
-
-
-	// Send the current date and time
-    time(&now);
-    tm = gmtime(&now);
-    strftime(date, sizeof(date), "Date: %a, %d %b %Y %H:%M:%S %Z\r\n", tm); 
-
-	send(newsockfd, date, strlen(date), 0);	// send the date
-
-
-	// Send the server name
-	char *server_name = "Server: MyBrowser/100.29.12\r\n";
-	send(newsockfd, server_name, strlen(server_name), 0);	// send the server name
+	send_general_response(200, newsockfd);
 
 	// Send the file type, length and content
 	send_file(fp, path, newsockfd);
 
-	//send(newsockfd, response, strlen(response), 0);
+
 	
 
 	fclose(fp);
