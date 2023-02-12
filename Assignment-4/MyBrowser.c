@@ -108,7 +108,7 @@ void get(char *url){
     send(sockfd, http_request, strlen(http_request)+1, 0);
 
     char response[100000];
-    recv(sockfd, response, 10000, MSG_WAITALL);
+    recv(sockfd, response, 10000, MSG_WAITALL); ///////////////
     printf("%s\n", response);
 
     close(sockfd);
@@ -165,7 +165,7 @@ void get_to_request(char *url, char *request) {
     } else if (strcmp(file_extension, ".jpg") == 0) {
     strcpy(accept, "Accept: image/jpeg\r\n");
     } else {
-    strcpy(accept, "Accept: */*\r\n");
+    strcpy(accept, "Accept: text/*\r\n");
     }
 
     // Set the Accept-Language header
