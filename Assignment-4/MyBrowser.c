@@ -120,7 +120,7 @@ void get(char *url)
     pt = strstr(response, "\r\n\r\n");
     pt += 4;
     size -= r - (pt - response);
-    download_file("curfilename", sockfd, size, pt, r - (pt - response));
+    download_file("untitled", sockfd, size, pt, r - (pt - response));
     // -------
     close(sockfd);
 
@@ -221,20 +221,24 @@ void download_file(char* filename, int sockfd, int size, char* content, int cont
     }
     fclose(fp);
 
-    if(curfileType == OTHER)
+    if(!fork())
     {
-        
-    }
-    else if(curfileType == HTML)
-    {
-        
-    }
-    else if(curfileType == PDF)
-    {
-    
-    }
-    else if(curfileType == JPG)
-    {
-        
+        if(curfileType == OTHER)
+        {
+            execvp("gedit", (char*[]){"gedit", filename, NULL});
+        }
+        else if(curfileType == HTML)
+        {
+            execvp("firefox", (char*[]){"firefox", filename, NULL});
+        }
+        else if(curfileType == PDF)
+        {
+            execvp("evince", (char*[]){"evince", filename, NULL});
+        }
+        else if(curfileType == JPG)
+        {
+            execvp("eog", (char*[]){"eog", filename, NULL});
+        }
+        exit(0);
     }
 }
