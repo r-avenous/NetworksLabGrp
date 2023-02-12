@@ -23,6 +23,10 @@ void get(char *url);                                           // Implements GET
 void put(char *url, char *filename);                           // Implements PUT {url} <filename>
 void get_to_request(char *url, char *request);                 // converts get command to HTTP request
 void set_content_type(const char *accept, char *content_type); // sets conent type according to accept header
+void download_file(char* filename, char* content);   // writes content to file
+enum fileType {HTML, PDF, JPG, OTHER};   // file type enum
+int curfileType;                        // current file type
+char* curfilename;                      // current filename
 
 int main()
 {
@@ -62,7 +66,6 @@ int main()
 void get(char *url)
 {
     char http_request[10000], server_ip[16];
-
     get_to_request(url, http_request);
 
     // strcpy(http_request, "GET / HTTP/1.1\r\n\
@@ -97,7 +100,7 @@ void get(char *url)
 
     serv_addr.sin_family = AF_INET;
     inet_aton(server_ip, &serv_addr.sin_addr);
-    serv_addr.sin_port = htons(8050);
+    serv_addr.sin_port = htons(8000);
 
     int status = connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
     if (status < 0)
@@ -111,6 +114,9 @@ void get(char *url)
     char response[100000];
     recv(sockfd, response, 10000, MSG_WAITALL);
     printf("%s\n", response);
+    char* content = strstr(response, "\r\n\r\n");
+    content += 4;
+    download_file("curfilename", content);
 
     close(sockfd);
 
@@ -143,7 +149,7 @@ void get_to_request(char *url, char *request)
     else
         path = "/";
 
-    // get file ectension from path
+    // get file extension from path
     file_extension = path;
     while (*file_extension != '.' && *file_extension != '\0')
     {
@@ -159,18 +165,22 @@ void get_to_request(char *url, char *request)
     if (strcmp(file_extension, ".html") == 0)
     {
         strcpy(accept, "Accept: text/html\r\n");
+        curfileType = HTML;
     }
     else if (strcmp(file_extension, ".pdf") == 0)
     {
         strcpy(accept, "Accept: application/pdf\r\n");
+        curfileType = PDF;
     }
     else if (strcmp(file_extension, ".jpg") == 0)
     {
         strcpy(accept, "Accept: image/jpeg\r\n");
+        curfileType = JPG;
     }
     else
     {
         strcpy(accept, "Accept: */*\r\n");
+        curfileType = OTHER;
     }
 
     // Set the Accept-Language header
@@ -186,5 +196,37 @@ void get_to_request(char *url, char *request)
 }
 
 /*
-GET http://127.0.0.1:8080/Hello.txt
+GET http://127.0.0.1:8000/Hello.txt
 */
+
+void download_file(char* filename, char* content)
+{
+    if(curfileType == OTHER)
+    {
+        FILE *fp;
+        fp = fopen(filename, "w");
+        fprintf(fp, "%s", content);
+        fclose(fp);
+    }
+    else if(curfileType == HTML)
+    {
+        FILE *fp;
+        fp = fopen(filename, "w");
+        fprintf(fp, "%s", content);
+        fclose(fp);
+    }
+    else if(curfileType == PDF)
+    {
+        FILE *fp;
+        fp = fopen(filename, "wb");
+        fprintf(fp, "%s", content);
+        fclose(fp);
+    }
+    else if(curfileType == JPG)
+    {
+        FILE *fp;
+        fp = fopen(filename, "wb");
+        fprintf(fp, "%s", content);
+        fclose(fp);
+    }
+}
