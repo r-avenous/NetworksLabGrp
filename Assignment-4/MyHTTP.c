@@ -13,7 +13,28 @@
 #include <sys/stat.h>
 
 #include "global_variables.h"
+
+
+
+
+
+
+
 #include "helper_functions.h"
+
+
+void free_all()
+{
+	if(method) free(method);
+	if(path) free(path);
+	if(version) free(version);
+	method=NULL; path=NULL; version=NULL;
+	for(int i=0; i<MAX_USEFUL_HEADERS; ++i){
+		if(values[i])
+			free(values[i]);
+		values[i]=NULL;
+	}
+}
 
 
 
@@ -42,13 +63,22 @@ int main(int argc, char **argv)
 		// receive the request from the client
 		receive_headers(newsockfd, buf, BUF_SIZE);
 		printf("\n\nRequest received:\n%s\n", buf); fflush(stdout);
-		parse_headers(buf, newsockfd);
+
+		printf("Method: %s\n", method);
+		printf("Path: %s\n", path);
+		
 
 		if(strcmp(method, "GET")==0){
+			for(int i=0; i<header_count_get; ++i){
+				printf("%s: %s\n", headers_get[i], values[i]);
+			}
+			printf("\n\n");
 			implement_GET(path, values, newsockfd);
+			free_all();
 		}
 		else if(strcmp(method, "PUT")==0){
 			implement_PUT(path, values, newsockfd);
+			free_all();
 		}
 		else{
 			if(values[CONTENT_LENGTH_INDEX] != NULL){

@@ -1,11 +1,127 @@
 void send_file(FILE *fp, char *filename, int newsockfd);
-void send_general_response(int status_code, int newsockfd);
+
 int min(int a, int b)
 {
 	if (a < b)
 		return a;
 	return b;
 }
+
+char *deep_copy(char *str)
+{
+	char *copy = (char *)malloc(strlen(str) + 1);
+	strcpy(copy, str);
+	return copy;
+}
+
+void parse_first_line(char *request)
+{
+	method = deep_copy(strsep(&request, " "));
+	path = deep_copy(strsep(&request, " "));
+	version = deep_copy(strsep(&request, "\r"));
+
+}
+
+void parse_headers(char *line)
+{
+	int header_count; char **headers;
+	if(strcmp(method, "GET")==0){	
+		header_count = header_count_get;
+		headers = headers_get;
+	}
+	else if(strcmp(method, "PUT")==0){	
+		header_count = header_count_put;
+		headers = headers_put;
+	}
+	else{
+		header_count = header_count_badreq;
+		headers = headers_badreq;
+	}
+
+	char *header = strsep(&line, " ");	
+	char *value = strsep(&line, "\r");
+
+	for(int i=0; i<header_count; ++i){
+		if(strcasecmp(header, headers[i])==0){
+			values[i] = deep_copy(value);
+			break;
+		}
+	}	
+
+
+}
+
+void receive_headers(int sockfd, char *buf, int size)
+{
+	int bytes_received = 0;
+	buf[0] = '\0';
+	int line_break = 0, end_of_req = 0;
+	int first_line = 1;
+	while (bytes_received < size)
+	{
+		int bytes = recv(sockfd, buf + bytes_received, min(size - bytes_received, MAXLINE), 0);
+		if (bytes == -1)
+		{
+			perror("Error in receiving data");
+			exit(0);
+		}
+		if (bytes == 0)
+		{
+			break;
+		}
+
+		for (int i = 0; i < bytes; ++i)
+		{
+			char ch = buf[bytes_received + i];
+			if (ch == ' ' || ch == '\t' || ch == '\r')
+				continue;
+
+			if (ch == '\n')
+			{	
+				buf[bytes_received + i] = '\0';
+				printf("## Received: %s\n", buf); fflush(stdout);
+
+				if(first_line){
+					parse_first_line(buf);
+					first_line = 0;
+
+				}
+				else{
+					parse_headers(buf);
+				}
+
+				strcpy(buf, buf + bytes_received+i+1);
+				line_break++;
+				bytes_received = -i-1;
+
+				if (line_break == 2)
+				{
+					strcpy(extra_data, buf + bytes_received + i + 1);
+					extra_data_size = bytes - i - 1;
+					end_of_req = 1;
+					break;
+				}
+			}
+			else
+			{
+				line_break = 0;
+			}
+		}
+
+		bytes_received += bytes;
+		if (end_of_req)
+		{
+			buf[bytes_received] = '\0';
+			break;
+		}
+
+		if (buf[bytes_received - 1] == '\0')
+		{
+			break;
+		}
+	}
+}
+
 
 int startServer(int port_no){
 	int sockfd, newsockfd; // socket descriptors
@@ -44,60 +160,7 @@ int startServer(int port_no){
 
 
 
-void receive_headers(int sockfd, char *buf, int size)
-{
-	int bytes_received = 0;
-	buf[0] = '\0';
-	int line_break = 0, end_of_req = 0;
-	while (bytes_received < size)
-	{
-		int bytes = recv(sockfd, buf + bytes_received, min(size - bytes_received, MAXLINE), 0);
-		if (bytes == -1)
-		{
-			perror("Error in receiving data");
-			exit(0);
-		}
-		if (bytes == 0)
-		{
-			break;
-		}
 
-		for (int i = 0; i < bytes; ++i)
-		{
-			char ch = buf[bytes_received + i];
-			if (ch == ' ' || ch == '\t' || ch == '\r')
-				continue;
-
-			if (ch == '\n')
-			{
-				line_break++;
-				if (line_break == 2)
-				{
-					strcpy(extra_data, buf + bytes_received + i + 1);
-					extra_data_size = bytes - i - 1;
-					end_of_req = 1;
-					break;
-				}
-			}
-			else
-			{
-				line_break = 0;
-			}
-		}
-
-		bytes_received += bytes;
-		if (end_of_req)
-		{
-			buf[bytes_received] = '\0';
-			break;
-		}
-
-		if (buf[bytes_received - 1] == '\0')
-		{
-			break;
-		}
-	}
-}
 // Sends Cache-Control headers
 void send_cache_ctrl(int newsockfd){
 	char *cache_ctrl = "Cache-Control: no-store\r\n";
@@ -206,67 +269,6 @@ void implement_error(int error_code, int newsockfd){
 	send_file(fp, file_name, newsockfd); 
 	fclose(fp);
 }
-
-
-void parse_headers(char *request, int newsockfd)
-{
-	char *version; int header_count; char **headers;
-	method = strsep(&request, " ");
-	path = strsep(&request, " ");
-	version = strsep(&request, "\r\n ");
-	if(method == NULL || path == NULL || version == NULL)
-	{
-		implement_error(BADREQUEST, newsockfd);
-		return;
-	}
-
-	printf("Method: %s\n", method);
-	printf("Path: %s\n", path);
-	printf("Version: %s\n", version);
-
-	if(strcmp(method, "GET")==0){	///////////
-		header_count = header_count_get;
-		headers = headers_get;
-	}
-	else if(strcmp(method, "PUT")==0){	///////////
-		header_count = header_count_put;
-		headers = headers_put;
-	}
-	else{
-		header_count = header_count_badreq;
-		headers = headers_badreq;
-	}
-
-
-	for(int i=0; i<header_count; ++i)
-		values[i] = NULL;
-
-	while(1){
-		++request; // to remove the \n	
-		char *line = strsep(&request, "\r");
-
-		if(strlen(line) == 0) 		// if the line is empty
-			break;
-
-		char *header = strsep(&line, " ");	char *value = line;
-
-		for(int i=0; i<header_count; ++i){
-			if(strcasecmp(header, headers[i])==0){
-				values[i] = value;
-				break;
-			}
-		}	
-	}
-
-
-	for(int i=0; i<header_count; ++i){
-		printf("%s %s\n", headers[i], values[i]);
-	}
-
-	return;
-}
-
-
 
 
 
