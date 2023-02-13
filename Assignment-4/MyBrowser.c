@@ -257,6 +257,9 @@ void put(char *url, char *filename)
     // upload function complete
     upload_file(filename, sockfd);
     // -------
+    char response[MAXLINE];
+    int r = recv(sockfd, response, MAXLINE, MSG_WAITALL);
+    printf("%s\n", response);
     close(sockfd);
 }
 
