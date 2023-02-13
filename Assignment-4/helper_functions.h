@@ -225,12 +225,12 @@ void implement_GET(char *path, char **values, int newsockfd){
 
 	printf("\n\nSending: %s\n\n", modified_path); fflush(stdout);
 
-	FILE *fp = fopen(modified_path, "r");
+	FILE *fp = fopen(modified_path, "rb");
 	if (fp == NULL) {
 		//File could not be opened(Probably not found)
 		perror("Could not open file\n");
 		send_general_response(404, newsockfd);
-		fp = fopen("404.html", "r");
+		fp = fopen("404.html", "rb");
 		send_file(fp, "404.html", newsockfd);
 		return;
 	}
@@ -275,7 +275,7 @@ void implement_PUT(char *path, char **values, int newsockfd)
 
 	printf("\n\nReceiving : %s\n\n", modified_path); fflush(stdout);
 
-	FILE *fp = fopen(modified_path, "w");
+	FILE *fp = fopen(modified_path, "wb");
 	if (fp == NULL) {
 		//File could not be opened(Probably not found)
 		perror("Could not open file\n");
