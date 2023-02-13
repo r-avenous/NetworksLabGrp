@@ -126,26 +126,27 @@ void get(char *url)
     if (status_code == NOTFOUND)
     {
         printf("404 Not Found\n");
-        return;
     }
     else if (status_code == BADREQUEST)
     {
         printf("400 Bad Request\n");
-        return;
     }
     else if (status_code == FORBIDDEN)
     {
         printf("403 Forbidden\n");
-        return;
     }
     else if (status_code != OK)
     {
         printf("Unknown Error\n");
-        return;
     }
 
     printf("%s\n", response);
     char* pt = strstr(response, "Content-Length: ");
+    // if content length is not present
+    if (pt == NULL)
+    {
+        return;
+    }
     int size = atoi(pt + 16);
     pt = strstr(response, "\r\n\r\n");
     pt += 4;
