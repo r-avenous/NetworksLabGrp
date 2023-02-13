@@ -60,6 +60,32 @@ void receive_in_packets(int sockfd, char *buf, int size){
 }
 
 
+void implement_error_404(int newsockfd){
+	send_general_response(404, newsockfd);
+	FILE *fp = fopen("404.html", "rb");
+	send_file(fp, "404.html", newsockfd);
+}
+
+void implement_error(int error_code, int newsockfd){
+	if(error_code==BADREQUEST)
+	{
+		char *first_line = "HTTP/1.1 400 Bad Request\r\n";
+		send(newsockfd, first_line, strlen(first_line), 0);	
+	}
+	else if(error_code==FORBIDDEN)
+	{
+		char *first_line = "HTTP/1.1 403 Forbidden\r\n";
+		send(newsockfd, first_line, strlen(first_line), 0);	
+	}
+	else if(error_code==NOTFOUND)
+	{
+		send_general_response(404, newsockfd);
+		FILE *fp = fopen("404.html", "r");
+		send_file(fp, "404.html", newsockfd);
+	}
+}
+
+
 void receive_headers(int sockfd, char *buf, int size)
 {
 	int bytes_received = 0;
@@ -240,31 +266,6 @@ void send_general_response(int status_code, int newsockfd){
 	// Send the server name
 	char *server_name = "Server: MyBrowser/100.29.12\r\n";
 	send(newsockfd, server_name, strlen(server_name), 0);	// send the server name
-}
-
-void implement_error_404(int newsockfd){
-	send_general_response(404, newsockfd);
-	FILE *fp = fopen("404.html", "rb");
-	send_file(fp, "404.html", newsockfd);
-}
-
-void implement_error(int error_code, int newsockfd){
-	if(error_code==BADREQUEST)
-	{
-		char *first_line = "HTTP/1.1 400 Bad Request\r\n";
-		send(newsockfd, first_line, strlen(first_line), 0);	
-	}
-	else if(error_code==FORBIDDEN)
-	{
-		char *first_line = "HTTP/1.1 403 Forbidden\r\n";
-		send(newsockfd, first_line, strlen(first_line), 0);	
-	}
-	else if(error_code==NOTFOUND)
-	{
-		send_general_response(404, newsockfd);
-		FILE *fp = fopen("404.html", "r");
-		send_file(fp, "404.html", newsockfd);
-	}
 }
 
 void implement_GET(char *path, char **values, int newsockfd){

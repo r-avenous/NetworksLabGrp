@@ -74,6 +74,9 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+int min(int a, int b){
+    return a < b ? a : b;
+}
 void receive_in_packets(int sockfd, char *buf, int size){
     int bytes_received = 0;
     buf[0] = '\0';
