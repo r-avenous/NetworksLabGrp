@@ -40,24 +40,6 @@ int startServer(int port_no){
 }
 
 
-void receive_in_packets(int sockfd, char *buf, int size){
-    int bytes_received = 0;
-    buf[0] = '\0';
-    while(bytes_received < size){
-        int bytes = recv(sockfd, buf + bytes_received, min(size - bytes_received, MAXLINE), 0);
-        if(bytes == -1){
-            perror("Error in receiving data");
-            exit(0);
-        }
-        if(bytes == 0){
-            break;
-        }
-        bytes_received += bytes;
-        if(buf[bytes_received-1] == '\0'){
-            break;
-        }
-    }
-}
 
 
 void receive_headers(int sockfd, char *buf, int size)
@@ -115,6 +97,92 @@ void receive_headers(int sockfd, char *buf, int size)
 	}
 }
 
+char *get_content_type(char *path){
+	char *ext = strrchr(path, '.');
+	if (ext == NULL) return "Content-Type: text/*\r\n";
+	if (strcmp(ext, ".html")==0) return "Content-Type: text/html\r\n";
+	if(strcmp(ext, ".pdf")==0) return "Content-Type: application/pdf\r\n";
+	if(strcmp(ext, ".jpg")==0) return "Content-Type: image/jpeg\r\n";
+
+	return "Content-Type: text/*\r\n";
+}
+
+void send_file(FILE *fp, char *filename, int newsockfd){
+
+	// Send the content type
+	char *content_type = get_content_type(filename);
+	send(newsockfd, content_type, strlen(content_type), 0);	// send the content type
+
+
+	// Send the content length
+	fseek(fp, 0L, SEEK_END);
+	int size = ftell(fp);
+	fseek(fp, 0L, SEEK_SET);
+
+
+	char content_len[30]; 
+	sprintf(content_len, "Content-Length: %d", size);
+	strcat(content_len, "\r\n\r\n");
+	send(newsockfd, content_len, strlen(content_len), 0);	// send the content length
+
+
+	char content[101];
+	int sent_size=0, read_size, total_read_size=0;
+	while((read_size = fread(content,1,100,fp))!= 0){
+		total_read_size += read_size;
+		int count = send(newsockfd, content, read_size, 0);
+		sent_size += count;
+	}
+
+	printf("\n\nFile sent\n");
+	printf("Sent size: %d\n", sent_size); 
+	printf("Total read size: %d\n\n", total_read_size);
+	fflush(stdout);
+}
+
+
+void send_date_server(int newsockfd){
+	char date[100];
+	time_t now;
+	struct tm *tm;
+
+	// Send the current date and time
+	time(&now);
+	tm = gmtime(&now);
+	strftime(date, sizeof(date), "Date: %a, %d %b %Y %H:%M:%S %Z\r\n", tm); 
+	send(newsockfd, date, strlen(date), 0);	// send the date
+}
+
+void implement_error(int error_code, int newsockfd){
+	char *first_line, *file_name;
+	if(error_code==BADREQUEST)
+	{
+		first_line = "HTTP/1.1 400 Bad Request\r\n";
+		file_name = "400.html";
+	}
+	else if(error_code==FORBIDDEN)
+	{
+		first_line = "HTTP/1.1 403 Forbidden\r\n";
+		file_name = "403.html";	
+	}
+	else if(error_code==NOTFOUND)
+	{
+		first_line = "HTTP/1.1 404 Not Found\r\n";
+		file_name = "404.html";
+	}
+
+	// send the first line
+	send(newsockfd, first_line, strlen(first_line), 0);	
+
+	// Send the current date and time and server name
+	send_date_server(newsockfd);
+
+	// Send the file
+	FILE *fp = fopen(file_name, "rb");
+	send_file(fp, file_name, newsockfd); 
+	fclose(fp);
+}
+
 
 void parse_headers(char *request, int newsockfd)
 {
@@ -170,102 +238,11 @@ void parse_headers(char *request, int newsockfd)
 	return;
 }
 
-char *get_content_type(char *path){
-	char *ext = strrchr(path, '.');
-	if (ext == NULL) return "Content-Type: text/*\r\n";
-	if (strcmp(ext, ".html")==0) return "Content-Type: text/html\r\n";
-	if(strcmp(ext, ".pdf")==0) return "Content-Type: application/pdf\r\n";
-	if(strcmp(ext, ".jpg")==0) return "Content-Type: image/jpeg\r\n";
-
-	return "Content-Type: text/*\r\n";
-}
-
-void send_file(FILE *fp, char *filename, int newsockfd){
-
-	// Send the content type
-	char *content_type = get_content_type(filename);
-	send(newsockfd, content_type, strlen(content_type), 0);	// send the content type
 
 
-	// Send the content length
-	fseek(fp, 0L, SEEK_END);
-	int size = ftell(fp);
-	fseek(fp, 0L, SEEK_SET);
 
 
-	char content_len[30]; 
-	sprintf(content_len, "Content-Length: %d", size);
-	strcat(content_len, "\r\n\r\n");
-	send(newsockfd, content_len, strlen(content_len), 0);	// send the content length
 
-
-	char content[101];
-	int sent_size=0, read_size, total_read_size=0;
-	while((read_size = fread(content,1,100,fp))!= 0){
-		total_read_size += read_size;
-		int count = send(newsockfd, content, read_size, 0);
-		sent_size += count;
-	}
-
-	printf("\n\nFile sent\n");
-	printf("Sent size: %d\n", sent_size); 
-	printf("Total read size: %d\n\n", total_read_size);
-	fflush(stdout);
-}
-
-void send_general_response(int status_code, int newsockfd){
-	char date[100];
-	time_t now;
-	struct tm *tm;
-	char *first_line;
-
-	if(status_code==200){
-		first_line = "HTTP/1.1 200 OK\r\n";  
-	}
-	else if(status_code==404){
-		first_line = "HTTP/1.1 404 Not Found\r\n";
-	}
-
-	// send the first line
-	send(newsockfd, first_line, strlen(first_line), 0);	
-
-
-	// Send the current date and time
-    time(&now);
-    tm = gmtime(&now);
-    strftime(date, sizeof(date), "Date: %a, %d %b %Y %H:%M:%S %Z\r\n", tm); 
-	send(newsockfd, date, strlen(date), 0);	// send the date
-
-
-	// Send the server name
-	char *server_name = "Server: MyBrowser/100.29.12\r\n";
-	send(newsockfd, server_name, strlen(server_name), 0);	// send the server name
-}
-
-void implement_error_404(int newsockfd){
-	send_general_response(404, newsockfd);
-	FILE *fp = fopen("404.html", "rb");
-	send_file(fp, "404.html", newsockfd);
-}
-
-void implement_error(int error_code, int newsockfd){
-	if(error_code==BADREQUEST)
-	{
-		char *first_line = "HTTP/1.1 400 Bad Request\r\n";
-		send(newsockfd, first_line, strlen(first_line), 0);	
-	}
-	else if(error_code==FORBIDDEN)
-	{
-		char *first_line = "HTTP/1.1 403 Forbidden\r\n";
-		send(newsockfd, first_line, strlen(first_line), 0);	
-	}
-	else if(error_code==NOTFOUND)
-	{
-		send_general_response(404, newsockfd);
-		FILE *fp = fopen("404.html", "r");
-		send_file(fp, "404.html", newsockfd);
-	}
-}
 
 void implement_GET(char *path, char **values, int newsockfd){
 	// putting a '.' before the path
@@ -279,12 +256,14 @@ void implement_GET(char *path, char **values, int newsockfd){
 	// File Not Found
 	if (fp == NULL) {
 		perror("Could not open file\n");
-		implement_error_404(newsockfd);
+		implement_error(NOTFOUND, newsockfd);
 		return;
 	}
 
 	// File Found
-	send_general_response(200, newsockfd);
+	char *first_line = "HTTP/1.1 200 OK\r\n";
+	send(newsockfd, first_line, strlen(first_line), 0);
+	send_date_server(newsockfd);
 
 	// Send the file type, length and content
 	send_file(fp, path, newsockfd);
@@ -325,18 +304,19 @@ void implement_PUT(char *path, char **values, int newsockfd)
 
 	FILE *fp = fopen(modified_path, "wb");
 	if (fp == NULL) {
-		//File could not be opened(Probably not found)
+		implement_error(FORBIDDEN ,newsockfd);
 		perror("Could not open file\n");
 		return;
 	}
+
 
 	// receive the file content
 	int content_length = atoi(values[3]);	// "content-length:"  is at 3rd index
 	receive_file_content(fp, content_length, newsockfd);
 	fclose(fp);
 
-
-
 	// File Received
-	send_general_response(200, newsockfd);
+	char *first_line = "HTTP/1.1 200 OK\r\n";
+	send(newsockfd, first_line, strlen(first_line), 0);	
+	send_date_server(newsockfd);
 }
