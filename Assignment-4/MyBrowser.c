@@ -253,7 +253,7 @@ void put(char *url, char *filename)
         exit(0);
     }
 
-    send(sockfd, http_request, strlen(http_request) + 1, 0);
+    send(sockfd, http_request, strlen(http_request), 0);
     // upload function complete
     upload_file(filename, sockfd);
     // -------
