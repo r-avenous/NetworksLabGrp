@@ -31,7 +31,7 @@ int curfileType;                        // current file type
 char* curfilename;                      // current filename
 
 
-int port_no = 80; // default port number
+int port_no = 8000; // default port number
 int main(int argc, char *argv[])
 {
     if (argc > 1){
@@ -145,25 +145,50 @@ void get(char *url)
         return;
     }
     pt2 += 14;
-    char* pt3 = strstr(pt2, "\r\n");
-    *pt3 = '\0';
-    if (strcmp(pt2, "text/html") == 0)
+    char *pt3 = strstr(pt2, "text/html");
+    if (pt3 != NULL && pt3 < pt2 + 10)
     {
         curfileType = HTML;
     }
-    else if (strcmp(pt2, "application/pdf") == 0)
-    {
-        curfileType = PDF;
-    }
-    else if (strcmp(pt2, "image/jpeg") == 0)
-    {
-        curfileType = JPG;
-    }
     else
     {
-        curfileType = OTHER;
+        pt3 = strstr(pt2, "application/pdf");
+        if (pt3 != NULL && pt3 < pt2 + 15)
+        {
+            curfileType = PDF;
+        }
+        else
+        {
+            pt3 = strstr(pt2, "image/jpeg");
+            if (pt3 != NULL && pt3 < pt2 + 10)
+            {
+                curfileType = JPG;
+            }
+            else
+            {
+                curfileType = OTHER;
+            }
+        }
     }
-    *pt3 = '\r';
+    // char* pt3 = strstr(pt2, "\r\n");
+    // *pt3 = '\0';
+    // if (strcmp(pt2, "text/html") == 0)
+    // {
+    //     curfileType = HTML;
+    // }
+    // else if (strcmp(pt2, "application/pdf") == 0)
+    // {
+    //     curfileType = PDF;
+    // }
+    // else if (strcmp(pt2, "image/jpeg") == 0)
+    // {
+    //     curfileType = JPG;
+    // }
+    // else
+    // {
+    //     curfileType = OTHER;
+    // }
+    // *pt3 = '\r';
     //
 
     printf("%s\n", response);
