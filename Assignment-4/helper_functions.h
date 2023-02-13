@@ -43,13 +43,12 @@ int startServer(int port_no){
 
 void receive_headers(int sockfd, char *buf, int size)
 {
-	const int PACKET_SIZE = MAXLINE;
 	int bytes_received = 0;
 	buf[0] = '\0';
 	int line_break = 0, end_of_req = 0;
 	while (bytes_received < size)
 	{
-		int bytes = recv(sockfd, buf + bytes_received, min(size - bytes_received, PACKET_SIZE), 0);
+		int bytes = recv(sockfd, buf + bytes_received, min(size - bytes_received, MAXLINE), 0);
 		if (bytes == -1)
 		{
 			perror("Error in receiving data");
@@ -71,6 +70,8 @@ void receive_headers(int sockfd, char *buf, int size)
 				line_break++;
 				if (line_break == 2)
 				{
+					strcpy(extra_data, buf + bytes_received + i + 1);
+					extra_data_size = bytes - i - 1;
 					end_of_req = 1;
 					break;
 				}
@@ -111,44 +112,32 @@ void parse_headers(char *request)
 		header_count = header_count_get;
 		headers = headers_get;
 	}
-
-
-	// for(int i=0; i<header_count; ++i){
-	// 	values[i] = NULL;
-	// }
-
-	// while(1){
-	// 	++request; // to remove the \n	
-	// 	char *line = strsep(&request, "\r");
-
-	// 	if(strlen(line) == 0) 		// if the line is empty
-	// 		break;
-
-	// 	char *header = strsep(&line, " ");
-	// 	char *value = line;
-	// 	printf("%s, %s\n", header, value);
-
-	// 	for(int i=0; i<header_count; ++i){
-	// 		if(strcmp(header, headers[i])==0){
-	// 			values[i] = value;
-	// 			break;
-	// 		}
-	// 	}
-			
-	// }
-
-
-	for(int i = 0; i < header_count; i++){
-		values[i] = NULL;
-		char *header = headers[i];
-
-		// search for the header in the request
-		char *header_ptr = strstr(request, header);
-		if(header_ptr == NULL) continue;
-
-		strsep(&header_ptr, " ");
-		values[i] = strsep(&header_ptr, "\r\n");
+	else if(strcmp(method, "PUT")==0){	///////////
+		header_count = header_count_put;
+		headers = headers_put;
 	}
+
+
+	for(int i=0; i<header_count; ++i)
+		values[i] = NULL;
+
+	while(1){
+		++request; // to remove the \n	
+		char *line = strsep(&request, "\r");
+
+		if(strlen(line) == 0) 		// if the line is empty
+			break;
+
+		char *header = strsep(&line, " ");	char *value = line;
+
+		for(int i=0; i<header_count; ++i){
+			if(strcmp(header, headers[i])==0){
+				values[i] = value;
+				break;
+			}
+		}	
+	}
+
 
 	for(int i=0; i<header_count; ++i){
 		printf("%s %s\n", headers[i], values[i]);
@@ -235,6 +224,7 @@ void implement_GET(char *path, char **values, int newsockfd){
 	strcpy(modified_path, "."); strcat(modified_path, path);
 
 	printf("\n\nSending: %s\n\n", modified_path); fflush(stdout);
+
 	FILE *fp = fopen(modified_path, "r");
 	if (fp == NULL) {
 		//File could not be opened(Probably not found)
@@ -252,8 +242,7 @@ void implement_GET(char *path, char **values, int newsockfd){
 	send_file(fp, path, newsockfd);
 
 
-	
-
+	// Close the file
 	fclose(fp);
 
 }
