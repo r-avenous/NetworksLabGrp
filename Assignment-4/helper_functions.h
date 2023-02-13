@@ -112,6 +112,32 @@ void parse_headers(char *request)
 		headers = headers_get;
 	}
 
+
+	// for(int i=0; i<header_count; ++i){
+	// 	values[i] = NULL;
+	// }
+
+	// while(1){
+	// 	++request; // to remove the \n	
+	// 	char *line = strsep(&request, "\r");
+
+	// 	if(strlen(line) == 0) 		// if the line is empty
+	// 		break;
+
+	// 	char *header = strsep(&line, " ");
+	// 	char *value = line;
+	// 	printf("%s, %s\n", header, value);
+
+	// 	for(int i=0; i<header_count; ++i){
+	// 		if(strcmp(header, headers[i])==0){
+	// 			values[i] = value;
+	// 			break;
+	// 		}
+	// 	}
+			
+	// }
+
+
 	for(int i = 0; i < header_count; i++){
 		values[i] = NULL;
 		char *header = headers[i];
@@ -122,7 +148,6 @@ void parse_headers(char *request)
 
 		strsep(&header_ptr, " ");
 		values[i] = strsep(&header_ptr, "\r\n");
-
 	}
 
 	for(int i=0; i<header_count; ++i){
