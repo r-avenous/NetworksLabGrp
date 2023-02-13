@@ -8,6 +8,9 @@
 #include <arpa/inet.h>
 #include <poll.h>
 #include <time.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <ctype.h>
 
 #define NOTFOUND 404
 #define OK 200
@@ -26,6 +29,7 @@ void put_to_request(char *url, char *filename, char *request); // converts put c
 void set_content_type(const char *accept, char *content_type); // sets conent type according to accept header
 void download_file(char* filename, int sockfd, int size, char* contentStart, int contstartlen);   // writes content to file
 void upload_file(char* filename, int sockfd);                  // uploads file to server
+char* stristr(const char* str1, const char* str2);             // case insensitive strstr
 enum fileType {HTML, PDF, JPG, OTHER};   // file type enum
 int curfileType;                        // current file type
 char* curfilename;                      // current filename
@@ -139,27 +143,27 @@ void get(char *url)
     {
         printf("Unknown Error\n");
     }
-    char* pt2 = strstr(response, "Content-Type: ");
+    char* pt2 = stristr(response, "Content-Type: ");
     if (pt2 == NULL)
     {
         return;
     }
     pt2 += 14;
-    char *pt3 = strstr(pt2, "text/html");
+    char *pt3 = stristr(pt2, "text/html");
     if (pt3 != NULL && pt3 < pt2 + 10)
     {
         curfileType = HTML;
     }
     else
     {
-        pt3 = strstr(pt2, "application/pdf");
+        pt3 = stristr(pt2, "application/pdf");
         if (pt3 != NULL && pt3 < pt2 + 15)
         {
             curfileType = PDF;
         }
         else
         {
-            pt3 = strstr(pt2, "image/jpeg");
+            pt3 = stristr(pt2, "image/jpeg");
             if (pt3 != NULL && pt3 < pt2 + 10)
             {
                 curfileType = JPG;
@@ -192,14 +196,14 @@ void get(char *url)
     //
 
     printf("%s\n", response);
-    char* pt = strstr(response, "Content-Length: ");
+    char* pt = stristr(response, "Content-Length: ");
     // if content length is not present
     if (pt == NULL)
     {
         return;
     }
     int size = atoi(pt + 16);
-    pt = strstr(response, "\r\n\r\n");
+    pt = stristr(response, "\r\n\r\n");
     pt += 4;
     size -= r - (pt - response);
     download_file("untitled", sockfd, size, pt, r - (pt - response));
@@ -441,6 +445,7 @@ void download_file(char* filename, int sockfd, int size, char* content, int cont
         }
         exit(0);
     }
+    wait(NULL);
 }
 
 void upload_file(char *filename, int sockfd)
@@ -459,4 +464,46 @@ void upload_file(char *filename, int sockfd)
         r += n;
     }
     fclose(fp);
+}
+
+char* stristr( const char* str1, const char* str2 )
+{
+    const char* p1 = str1 ;
+    const char* p2 = str2 ;
+    const char* r = *p2 == 0 ? str1 : 0 ;
+
+    while( *p1 != 0 && *p2 != 0 )
+    {
+        if( tolower( (unsigned char)*p1 ) == tolower( (unsigned char)*p2 ) )
+        {
+            if( r == 0 )
+            {
+                r = p1 ;
+            }
+
+            p2++ ;
+        }
+        else
+        {
+            p2 = str2 ;
+            if( r != 0 )
+            {
+                p1 = r + 1 ;
+            }
+
+            if( tolower( (unsigned char)*p1 ) == tolower( (unsigned char)*p2 ) )
+            {
+                r = p1 ;
+                p2++ ;
+            }
+            else
+            {
+                r = 0 ;
+            }
+        }
+
+        p1++ ;
+    }
+
+    return *p2 == 0 ? (char*)r : 0 ;
 }
