@@ -139,6 +139,32 @@ void get(char *url)
     {
         printf("Unknown Error\n");
     }
+    char* pt2 = strstr(response, "Content-Type: ");
+    if (pt2 == NULL)
+    {
+        return;
+    }
+    pt2 += 14;
+    char* pt3 = strstr(pt2, "\r\n");
+    *pt3 = '\0';
+    if (strcmp(pt2, "text/html") == 0)
+    {
+        curfileType = HTML;
+    }
+    else if (strcmp(pt2, "application/pdf") == 0)
+    {
+        curfileType = PDF;
+    }
+    else if (strcmp(pt2, "image/jpeg") == 0)
+    {
+        curfileType = JPG;
+    }
+    else
+    {
+        curfileType = OTHER;
+    }
+    *pt3 = '\r';
+    //
 
     printf("%s\n", response);
     char* pt = strstr(response, "Content-Length: ");
