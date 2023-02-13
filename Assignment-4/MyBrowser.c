@@ -30,8 +30,13 @@ enum fileType {HTML, PDF, JPG, OTHER};   // file type enum
 int curfileType;                        // current file type
 char* curfilename;                      // current filename
 
-int main()
+
+int port_no = 80; // default port number
+int main(int argc, char *argv[])
 {
+    if (argc > 1){
+        port_no = atoi(argv[1]);
+    }
 
     // assumed url max size
     char cmd[4], url[200], filename[100];
@@ -102,7 +107,7 @@ void get(char *url)
 
     serv_addr.sin_family = AF_INET;
     inet_aton(server_ip, &serv_addr.sin_addr);
-    serv_addr.sin_port = htons(80);
+    serv_addr.sin_port = htons(port_no);
 
     int status = connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
     if (status < 0)

@@ -112,6 +112,32 @@ void parse_headers(char *request)
 		headers = headers_get;
 	}
 
+
+	// for(int i=0; i<header_count; ++i){
+	// 	values[i] = NULL;
+	// }
+
+	// while(1){
+	// 	++request; // to remove the \n	
+	// 	char *line = strsep(&request, "\r");
+
+	// 	if(strlen(line) == 0) 		// if the line is empty
+	// 		break;
+
+	// 	char *header = strsep(&line, " ");
+	// 	char *value = line;
+	// 	printf("%s, %s\n", header, value);
+
+	// 	for(int i=0; i<header_count; ++i){
+	// 		if(strcmp(header, headers[i])==0){
+	// 			values[i] = value;
+	// 			break;
+	// 		}
+	// 	}
+			
+	// }
+
+
 	for(int i = 0; i < header_count; i++){
 		values[i] = NULL;
 		char *header = headers[i];
@@ -122,7 +148,6 @@ void parse_headers(char *request)
 
 		strsep(&header_ptr, " ");
 		values[i] = strsep(&header_ptr, "\r\n");
-
 	}
 
 	for(int i=0; i<header_count; ++i){
@@ -130,4 +155,105 @@ void parse_headers(char *request)
 	}
 
 	return;
+}
+
+char *get_content_type(char *path){
+	char *ext = strrchr(path, '.');
+	if (ext == NULL) return "Content-Type: text/*\r\n";
+	if (strcmp(ext, ".html")==0) return "Content-Type: text/html\r\n";
+	if(strcmp(ext, ".pdf")==0) return "Content-Type: application/pdf\r\n";
+	if(strcmp(ext, ".jpg")==0) return "Content-Type: image/jpeg\r\n";
+
+	return "Content-Type: text/*\r\n";
+}
+
+void send_file(FILE *fp, char *filename, int newsockfd){
+
+	// Send the content type
+	char *content_type = get_content_type(filename);
+	send(newsockfd, content_type, strlen(content_type), 0);	// send the content type
+
+
+	// Send the content length
+	fseek(fp, 0L, SEEK_END);
+	int size = ftell(fp);
+	fseek(fp, 0L, SEEK_SET);
+
+
+	char content_len[30]; 
+	sprintf(content_len, "Content-Length: %d", size);
+	strcat(content_len, "\r\n\r\n");
+	send(newsockfd, content_len, strlen(content_len), 0);	// send the content length
+
+
+	char content[101];
+	int sent_size=0, read_size, total_read_size=0;
+	while((read_size = fread(content,1,100,fp))!= 0){
+		total_read_size += read_size;
+		int count = send(newsockfd, content, read_size, 0);
+		sent_size += count;
+	}
+
+	printf("\n\nFile sent\n");
+	printf("Sent size: %d\n", sent_size); 
+	printf("Total read size: %d\n\n", total_read_size);
+	fflush(stdout);
+}
+
+void send_general_response(int status_code, int newsockfd){
+	char date[100];
+	time_t now;
+	struct tm *tm;
+	char *first_line;
+
+	if(status_code==200){
+		first_line = "HTTP/1.1 200 OK\r\n";  
+	}
+	else if(status_code==404){
+		first_line = "HTTP/1.1 404 Not Found\r\n";
+	}
+
+	// send the first line
+	send(newsockfd, first_line, strlen(first_line), 0);	
+
+
+	// Send the current date and time
+    time(&now);
+    tm = gmtime(&now);
+    strftime(date, sizeof(date), "Date: %a, %d %b %Y %H:%M:%S %Z\r\n", tm); 
+	send(newsockfd, date, strlen(date), 0);	// send the date
+
+
+	// Send the server name
+	char *server_name = "Server: MyBrowser/100.29.12\r\n";
+	send(newsockfd, server_name, strlen(server_name), 0);	// send the server name
+}
+
+void implement_GET(char *path, char **values, int newsockfd){
+	// putting a '.' before the path
+	char *modified_path = (char *)malloc(sizeof(char)*(sizeof(path)+1));
+	strcpy(modified_path, "."); strcat(modified_path, path);
+
+	printf("\n\nSending: %s\n\n", modified_path); fflush(stdout);
+	FILE *fp = fopen(modified_path, "r");
+	if (fp == NULL) {
+		//File could not be opened(Probably not found)
+		perror("Could not open file\n");
+		send_general_response(404, newsockfd);
+		fp = fopen("404.html", "r");
+		send_file(fp, "404.html", newsockfd);
+		return;
+	}
+
+	// File Found
+	send_general_response(200, newsockfd);
+
+	// Send the file type, length and content
+	send_file(fp, path, newsockfd);
+
+
+	
+
+	fclose(fp);
+
 }
