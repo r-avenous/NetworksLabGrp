@@ -9,14 +9,14 @@
 #include <poll.h>
 #include <time.h>
 #include <ctype.h>
+#include <signal.h>
 
 #include "global_variables.h"
 #include "helper_functions.h"
 
-
-
 int main(int argc, char **argv)
 {
+	signal(SIGPIPE, SIG_IGN);
 	int sockfd, newsockfd; // socket descriptors
 	struct sockaddr_in cli_addr; int clilen = sizeof(cli_addr); // client address, size
 
@@ -36,11 +36,10 @@ int main(int argc, char **argv)
 			perror("Accept error\n");
 			exit(0);
 		}
-
 		// receive the request from the client
 		receive_headers(newsockfd, buf, BUF_SIZE);
 		printf("\n\nRequest received:\n%s\n", buf); fflush(stdout);
-		parse_headers(buf);
+		parse_headers(buf, newsockfd);
 
 		if(strcmp(method, "GET")==0){
 			implement_GET(path, values, newsockfd);
@@ -48,9 +47,9 @@ int main(int argc, char **argv)
 		else if(strcmp(method, "PUT")==0){
 			implement_PUT(path, values, newsockfd);
 		}
-		// else{
-		// 	implement_error(BADREQUEST, newsockfd);
-		// }
+		else{
+			implement_error(BADREQUEST, newsockfd);
+		}
 		close(newsockfd);
 	}
 	return 0;
