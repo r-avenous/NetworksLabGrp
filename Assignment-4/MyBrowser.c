@@ -36,7 +36,7 @@ int curfileType;                        // current file type
 char* curfilename;                      // current filename
 
 
-int port_no = 8000; // default port number
+int port_no = 80; // default port number
 int main(int argc, char *argv[])
 {
     if (argc > 1){
@@ -99,6 +99,13 @@ void get(char *url)
         }
     }
     printf("SERVER IP = %s\n\n\n", server_ip);
+    // get port number
+    char *port = strstr(server_ip, ":");
+    if (port != NULL)
+    {
+        port_no = atoi(port + 1);
+        *port = '\0';
+    }
 
     int sockfd;
     struct sockaddr_in serv_addr;
