@@ -40,7 +40,24 @@ int startServer(int port_no){
 }
 
 
-
+void receive_in_packets(int sockfd, char *buf, int size){
+    int bytes_received = 0;
+    buf[0] = '\0';
+    while(bytes_received < size){
+        int bytes = recv(sockfd, buf + bytes_received, min(size - bytes_received, MAXLINE), 0);
+        if(bytes == -1){
+            perror("Error in receiving data");
+            exit(0);
+        }
+        if(bytes == 0){
+            break;
+        }
+        bytes_received += bytes;
+        if(buf[bytes_received-1] == '\0'){
+            break;
+        }
+    }
+}
 
 
 void receive_headers(int sockfd, char *buf, int size)
