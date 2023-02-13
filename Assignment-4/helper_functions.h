@@ -40,6 +40,19 @@ int startServer(int port_no){
 }
 
 
+int case_insensitive_strcmp(const char *str1, const char *str2) {
+    while (*str1 && *str2) {
+        int c1 = tolower(*str1);
+        int c2 = tolower(*str2);
+        if (c1 != c2) {
+            return c1 - c2;
+        }
+        str1++;
+        str2++;
+    }
+    return tolower(*str1) - tolower(*str2);
+}
+
 
 void receive_headers(int sockfd, char *buf, int size)
 {
@@ -131,7 +144,7 @@ void parse_headers(char *request)
 		char *header = strsep(&line, " ");	char *value = line;
 
 		for(int i=0; i<header_count; ++i){
-			if(strcmp(header, headers[i])==0){
+			if(strcasecmp(header, headers[i])==0){
 				values[i] = value;
 				break;
 			}
@@ -218,6 +231,13 @@ void send_general_response(int status_code, int newsockfd){
 	send(newsockfd, server_name, strlen(server_name), 0);	// send the server name
 }
 
+void implement_error_404(int newsockfd){
+	send_general_response(404, newsockfd);
+	FILE *fp = fopen("404.html", "r");
+	send_file(fp, "404.html", newsockfd);
+}
+
+
 void implement_GET(char *path, char **values, int newsockfd){
 	// putting a '.' before the path
 	char *modified_path = (char *)malloc(sizeof(char)*(sizeof(path)+1));
@@ -225,13 +245,12 @@ void implement_GET(char *path, char **values, int newsockfd){
 
 	printf("\n\nSending: %s\n\n", modified_path); fflush(stdout);
 
-	FILE *fp = fopen(modified_path, "rb");
+	FILE *fp = fopen(modified_path, "r");
+
+	// File Not Found
 	if (fp == NULL) {
-		//File could not be opened(Probably not found)
 		perror("Could not open file\n");
-		send_general_response(404, newsockfd);
-		fp = fopen("404.html", "rb");
-		send_file(fp, "404.html", newsockfd);
+		implement_error_404(newsockfd);
 		return;
 	}
 
@@ -275,7 +294,7 @@ void implement_PUT(char *path, char **values, int newsockfd)
 
 	printf("\n\nReceiving : %s\n\n", modified_path); fflush(stdout);
 
-	FILE *fp = fopen(modified_path, "wb");
+	FILE *fp = fopen(modified_path, "w");
 	if (fp == NULL) {
 		//File could not be opened(Probably not found)
 		perror("Could not open file\n");

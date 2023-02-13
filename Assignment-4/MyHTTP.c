@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <poll.h>
 #include <time.h>
+#include <ctype.h>
 
 #include "global_variables.h"
 #include "helper_functions.h"
@@ -38,9 +39,7 @@ int main(int argc, char **argv)
 
 		// receive the request from the client
 		receive_headers(newsockfd, buf, BUF_SIZE);
-
 		printf("\n\nRequest received:\n%s\n", buf); fflush(stdout);
-
 		parse_headers(buf);
 
 		if(strcmp(method, "GET")==0){
@@ -52,8 +51,6 @@ int main(int argc, char **argv)
 		// else{
 		// 	implement_error(BADREQUEST, newsockfd);
 		// }
-
-		// send(newsockfd, "REQUEST RECEIVED", 17, 0);	// send the current time
 		close(newsockfd);
 	}
 	return 0;
