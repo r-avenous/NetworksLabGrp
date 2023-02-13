@@ -23,23 +23,29 @@
 #define MAXCONNECTIONS 5
 #define DURATION 5000
 
-void get(char *url);                                           // Implements GET {url}
-void put(char *url, char *filename);                           // Implements PUT {url} <filename>
-void get_to_request(char *url, char *request);                 // converts get command to HTTP request
-void put_to_request(char *url, char *filename, char *request); // converts put command to HTTP request
-void set_content_type(const char *accept, char *content_type); // sets conent type according to accept header
-void download_file(char* filename, int sockfd, int size, char* contentStart, int contstartlen);   // writes content to file
-void upload_file(char* filename, int sockfd);                  // uploads file to server
-char* stristr(const char* str1, const char* str2);             // case insensitive strstr
-enum fileType {HTML, PDF, JPG, OTHER};   // file type enum
-int curfileType;                        // current file type
-char* curfilename;                      // current filename
-
+void get(char *url);                                                                            // Implements GET {url}
+void put(char *url, char *filename);                                                            // Implements PUT {url} <filename>
+void get_to_request(char *url, char *request);                                                  // converts get command to HTTP request
+void put_to_request(char *url, char *filename, char *request);                                  // converts put command to HTTP request
+void set_content_type(const char *accept, char *content_type);                                  // sets conent type according to accept header
+void download_file(char *filename, int sockfd, int size, char *contentStart, int contstartlen); // writes content to file
+void upload_file(char *filename, int sockfd);                                                   // uploads file to server
+char *stristr(const char *str1, const char *str2);                                              // case insensitive strstr
+enum fileType
+{
+    HTML,
+    PDF,
+    JPG,
+    OTHER
+};                 // file type enum
+int curfileType;   // current file type
+char *curfilename; // current filename
 
 int port_no = 80; // default port number
 int main(int argc, char *argv[])
 {
-    if (argc > 1){
+    if (argc > 1)
+    {
         port_no = atoi(argv[1]);
     }
 
@@ -74,23 +80,29 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int min(int a, int b){
+int min(int a, int b)
+{
     return a < b ? a : b;
 }
-void receive_in_packets(int sockfd, char *buf, int size){
+void receive_in_packets(int sockfd, char *buf, int size)
+{
     int bytes_received = 0;
     buf[0] = '\0';
-    while(bytes_received < size){
+    while (bytes_received < size)
+    {
         int bytes = recv(sockfd, buf + bytes_received, min(size - bytes_received, MAXLINE), 0);
-        if(bytes == -1){
+        if (bytes == -1)
+        {
             perror("Error in receiving data");
             exit(0);
         }
-        if(bytes == 0){
+        if (bytes == 0)
+        {
             break;
         }
         bytes_received += bytes;
-        if(buf[bytes_received-1] == '\0'){
+        if (buf[bytes_received - 1] == '\0')
+        {
             break;
         }
     }
@@ -122,11 +134,10 @@ void get(char *url)
     }
     printf("SERVER IP = %s\n\n\n", server_ip);
     // get port number
-    char *port = strstr(server_ip, ":");
+    char *port = strstr(url+7, ":");
     if (port != NULL)
     {
         port_no = atoi(port + 1);
-        *port = '\0';
     }
 
     int sockfd;
@@ -150,7 +161,7 @@ void get(char *url)
         exit(0);
     }
 
-    send(sockfd, http_request, strlen(http_request) + 1, 0);
+    send(sockfd, http_request, strlen(http_request), 0);
 
     // download function complete
     char response[MAXLINE];
@@ -173,7 +184,7 @@ void get(char *url)
     {
         printf("Unknown Error\n");
     }
-    char* pt2 = stristr(response, "Content-Type: ");
+    char *pt2 = stristr(response, "Content-Type: ");
     if (pt2 == NULL)
     {
         return;
@@ -204,29 +215,9 @@ void get(char *url)
             }
         }
     }
-    // char* pt3 = strstr(pt2, "\r\n");
-    // *pt3 = '\0';
-    // if (strcmp(pt2, "text/html") == 0)
-    // {
-    //     curfileType = HTML;
-    // }
-    // else if (strcmp(pt2, "application/pdf") == 0)
-    // {
-    //     curfileType = PDF;
-    // }
-    // else if (strcmp(pt2, "image/jpeg") == 0)
-    // {
-    //     curfileType = JPG;
-    // }
-    // else
-    // {
-    //     curfileType = OTHER;
-    // }
-    // *pt3 = '\r';
-    //
 
     printf("%s\n", response);
-    char* pt = stristr(response, "Content-Length: ");
+    char *pt = stristr(response, "Content-Length: ");
     // if content length is not present
     if (pt == NULL)
     {
@@ -248,7 +239,7 @@ void put(char *url, char *filename)
 {
     char http_request[10000], server_ip[16];
     put_to_request(url, filename, http_request);
-    
+
     printf("\n\nRequest Sent=\n%s\n\n", http_request);
 
     strcpy(server_ip, url + 7);
@@ -259,6 +250,12 @@ void put(char *url, char *filename)
             server_ip[i] = '\0';
             break;
         }
+    }
+    // get port number
+    char *port = strstr(url+7, ":");
+    if (port != NULL)
+    {
+        port_no = atoi(port + 1);
     }
     printf("SERVER IP = %s\n\n\n", server_ip);
 
@@ -274,7 +271,7 @@ void put(char *url, char *filename)
 
     serv_addr.sin_family = AF_INET;
     inet_aton(server_ip, &serv_addr.sin_addr);
-    serv_addr.sin_port = htons(8000);
+    serv_addr.sin_port = htons(port_no);
 
     int status = connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
     if (status < 0)
@@ -428,12 +425,12 @@ void put_to_request(char *url, char *filename, char *request)
     sprintf(content_length, "Content-Length: %d\r\n", size);
 
     // Construct the request message
-    if(strlen(path) == 0 || path[strlen(path) - 1] == '/')
+    if (strlen(path) == 0 || path[strlen(path) - 1] == '/')
         sprintf(request, "PUT /%s%s HTTP/1.1\r\nHost: %s\r\nDate: %s\r\n%s%s%s%s\r\n",
-            path, filename, host, date, accept, accept_language, last_modified, content_length);
+                path, filename, host, date, accept, accept_language, last_modified, content_length);
     else
         sprintf(request, "PUT /%s/%s HTTP/1.1\r\nHost: %s\r\nDate: %s\r\n%s%s%s%s\r\n",
-            path, filename, host, date, accept, accept_language, last_modified, content_length);
+                path, filename, host, date, accept, accept_language, last_modified, content_length);
 }
 
 /*
@@ -442,7 +439,7 @@ GET http://127.0.0.1:8000/queries.sql
 GET http://127.0.0.1:8000/Assgn-3.pdf
 */
 
-void download_file(char* filename, int sockfd, int size, char* content, int contstartlen)
+void download_file(char *filename, int sockfd, int size, char *content, int contstartlen)
 {
     FILE *fp;
     fp = fopen(filename, "wb");
@@ -457,23 +454,23 @@ void download_file(char* filename, int sockfd, int size, char* content, int cont
     }
     fclose(fp);
 
-    if(!fork())
+    if (!fork())
     {
-        if(curfileType == OTHER)
+        if (curfileType == OTHER)
         {
-            execvp("gedit", (char*[]){"gedit", filename, NULL});
+            execvp("gedit", (char *[]){"gedit", filename, NULL});
         }
-        else if(curfileType == HTML)
+        else if (curfileType == HTML)
         {
-            execvp("firefox", (char*[]){"firefox", filename, NULL});
+            execvp("firefox", (char *[]){"firefox", filename, NULL});
         }
-        else if(curfileType == PDF)
+        else if (curfileType == PDF)
         {
-            execvp("evince", (char*[]){"evince", filename, NULL});
+            execvp("evince", (char *[]){"evince", filename, NULL});
         }
-        else if(curfileType == JPG)
+        else if (curfileType == JPG)
         {
-            execvp("eog", (char*[]){"eog", filename, NULL});
+            execvp("eog", (char *[]){"eog", filename, NULL});
         }
         exit(0);
     }
@@ -498,44 +495,44 @@ void upload_file(char *filename, int sockfd)
     fclose(fp);
 }
 
-char* stristr( const char* str1, const char* str2 )
+char *stristr(const char *str1, const char *str2)
 {
-    const char* p1 = str1 ;
-    const char* p2 = str2 ;
-    const char* r = *p2 == 0 ? str1 : 0 ;
+    const char *p1 = str1;
+    const char *p2 = str2;
+    const char *r = *p2 == 0 ? str1 : 0;
 
-    while( *p1 != 0 && *p2 != 0 )
+    while (*p1 != 0 && *p2 != 0)
     {
-        if( tolower( (unsigned char)*p1 ) == tolower( (unsigned char)*p2 ) )
+        if (tolower((unsigned char)*p1) == tolower((unsigned char)*p2))
         {
-            if( r == 0 )
+            if (r == 0)
             {
-                r = p1 ;
+                r = p1;
             }
 
-            p2++ ;
+            p2++;
         }
         else
         {
-            p2 = str2 ;
-            if( r != 0 )
+            p2 = str2;
+            if (r != 0)
             {
-                p1 = r + 1 ;
+                p1 = r + 1;
             }
 
-            if( tolower( (unsigned char)*p1 ) == tolower( (unsigned char)*p2 ) )
+            if (tolower((unsigned char)*p1) == tolower((unsigned char)*p2))
             {
-                r = p1 ;
-                p2++ ;
+                r = p1;
+                p2++;
             }
             else
             {
-                r = 0 ;
+                r = 0;
             }
         }
 
-        p1++ ;
+        p1++;
     }
 
-    return *p2 == 0 ? (char*)r : 0 ;
+    return *p2 == 0 ? (char *)r : 0;
 }
