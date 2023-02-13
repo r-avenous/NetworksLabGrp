@@ -447,9 +447,8 @@ void download_file(char* filename, int sockfd, int size, char* content, int cont
     int r = 0;
     while (r < size)
     {
-        char buffer[MAXLINE+1];
-        int n = recv(sockfd, buffer, MAXLINE, MSG_WAITALL);
-        buffer[n] = '\0';
+        char buffer[MAXLINE];
+        int n = recv(sockfd, buffer, MAXLINE, 0);
         fwrite(buffer, n, 1, fp);
         r += n;
     }
