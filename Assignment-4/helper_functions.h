@@ -40,18 +40,7 @@ int startServer(int port_no){
 }
 
 
-int case_insensitive_strcmp(const char *str1, const char *str2) {
-    while (*str1 && *str2) {
-        int c1 = tolower(*str1);
-        int c2 = tolower(*str2);
-        if (c1 != c2) {
-            return c1 - c2;
-        }
-        str1++;
-        str2++;
-    }
-    return tolower(*str1) - tolower(*str2);
-}
+
 
 
 void receive_headers(int sockfd, char *buf, int size)
@@ -238,7 +227,7 @@ void send_general_response(int status_code, int newsockfd){
 
 void implement_error_404(int newsockfd){
 	send_general_response(404, newsockfd);
-	FILE *fp = fopen("404.html", "r");
+	FILE *fp = fopen("404.html", "rb");
 	send_file(fp, "404.html", newsockfd);
 }
 
@@ -268,7 +257,7 @@ void implement_GET(char *path, char **values, int newsockfd){
 
 	printf("\n\nSending: %s\n\n", modified_path); fflush(stdout);
 
-	FILE *fp = fopen(modified_path, "r");
+	FILE *fp = fopen(modified_path, "rb");
 
 	// File Not Found
 	if (fp == NULL) {
@@ -317,13 +306,10 @@ void implement_PUT(char *path, char **values, int newsockfd)
 
 	printf("\n\nReceiving : %s\n\n", modified_path); fflush(stdout);
 
-	FILE *fp = fopen(modified_path, "w");
+	FILE *fp = fopen(modified_path, "wb");
 	if (fp == NULL) {
 		//File could not be opened(Probably not found)
 		perror("Could not open file\n");
-		// send_general_response(404, newsockfd);
-		// fp = fopen("404.html", "r");
-		// send_file(fp, "404.html", newsockfd);
 		return;
 	}
 
