@@ -1,3 +1,5 @@
+void send_file(FILE *fp, char *filename, int newsockfd);
+void send_general_response(int status_code, int newsockfd);
 int min(int a, int b)
 {
 	if (a < b)
