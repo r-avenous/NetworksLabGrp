@@ -10,9 +10,10 @@
 #define LOGGILE "AccessLog.txt"
 #define BUF_SIZE 10000
 
-int header_count_get = 6, header_count_put = 5;
+int header_count_get = 6, header_count_put = 5, header_count_badreq = 1;
 char *headers_get[] = {"Host:", "Date:", "Accept:", "Accept-Language:", "If-Modified-Since:", "Connection:"};
-char *headers_put[] = {"Host:", "Date:", "Content-Type:", "Content-Length:", "Connection:"};
+char *headers_put[] = {"Content-Length:", "Content-Type:", "Host:", "Date:", "Connection:"};
+char *headers_badreq[] = {"Content-Length:"};
 
 
 char *values[10];

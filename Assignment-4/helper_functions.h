@@ -210,6 +210,10 @@ void parse_headers(char *request, int newsockfd)
 		header_count = header_count_put;
 		headers = headers_put;
 	}
+	else{
+		header_count = header_count_badreq;
+		headers = headers_badreq;
+	}
 
 
 	for(int i=0; i<header_count; ++i)

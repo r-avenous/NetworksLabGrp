@@ -48,7 +48,13 @@ int main(int argc, char **argv)
 			implement_PUT(path, values, newsockfd);
 		}
 		else{
+			if(values[0] != NULL){
+				FILE* fp = fopen("temp.txt", "w");
+				receive_file_content(fp, atoi(values[0]), newsockfd);
+				fclose(fp);
+			}
 			implement_error(BADREQUEST, newsockfd);
+			remove("temp.txt");
 		}
 		close(newsockfd);
 	}
