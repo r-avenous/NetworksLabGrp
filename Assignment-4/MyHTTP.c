@@ -9,14 +9,14 @@
 #include <poll.h>
 #include <time.h>
 #include <ctype.h>
+#include <signal.h>
 
 #include "global_variables.h"
 #include "helper_functions.h"
 
-
-
 int main(int argc, char **argv)
 {
+	signal(SIGPIPE, SIG_IGN);
 	int sockfd, newsockfd; // socket descriptors
 	struct sockaddr_in cli_addr; int clilen = sizeof(cli_addr); // client address, size
 
@@ -36,7 +36,6 @@ int main(int argc, char **argv)
 			perror("Accept error\n");
 			exit(0);
 		}
-
 		// receive the request from the client
 		receive_headers(newsockfd, buf, BUF_SIZE);
 		printf("\n\nRequest received:\n%s\n", buf); fflush(stdout);
