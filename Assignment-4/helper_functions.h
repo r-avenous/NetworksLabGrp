@@ -286,7 +286,6 @@ void implement_PUT(char *path, char **values, int newsockfd)
 	FILE *fp = fopen(modified_path, "wb");
 	if (fp == NULL) {
 		//File could not be opened(Probably not found)
-		implement_error_404(newsockfd);
 		perror("Could not open file\n");
 		return;
 	}
