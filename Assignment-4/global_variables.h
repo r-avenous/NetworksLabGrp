@@ -9,6 +9,7 @@
 #define DURATION 5000
 #define LOGGILE "AccessLog.txt"
 #define BUF_SIZE 10000
+#define CONTENT_LENGTH_INDEX 0
 
 int header_count_get = 6, header_count_put = 5, header_count_badreq = 1;
 char *headers_get[] = {"Host:", "Date:", "Accept:", "Accept-Language:", "If-Modified-Since:", "Connection:"};

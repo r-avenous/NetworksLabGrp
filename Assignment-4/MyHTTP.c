@@ -10,9 +10,12 @@
 #include <time.h>
 #include <ctype.h>
 #include <signal.h>
+#include <sys/stat.h>
 
 #include "global_variables.h"
 #include "helper_functions.h"
+
+
 
 int main(int argc, char **argv)
 {
@@ -48,7 +51,7 @@ int main(int argc, char **argv)
 			implement_PUT(path, values, newsockfd);
 		}
 		else{
-			if(values[0] != NULL){
+			if(values[CONTENT_LENGTH_INDEX] != NULL){
 				FILE* fp = fopen("temp.txt", "w");
 				receive_file_content(fp, atoi(values[0]), newsockfd);
 				fclose(fp);

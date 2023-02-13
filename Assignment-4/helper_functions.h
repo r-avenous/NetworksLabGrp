@@ -98,6 +98,11 @@ void receive_headers(int sockfd, char *buf, int size)
 		}
 	}
 }
+// Sends Cache-Control headers
+void send_cache_ctrl(int newsockfd){
+	char *cache_ctrl = "Cache-Control: no-store\r\n";
+	send(newsockfd, cache_ctrl, strlen(cache_ctrl), 0);
+}
 
 char *get_content_type(char *path){
 	char *ext = strrchr(path, '.');
@@ -109,9 +114,26 @@ char *get_content_type(char *path){
 	return "Content-Type: text/*\r\n";
 }
 
+void send_expiry(int newsockfd){
+	// set to current time + 3 days
+	char expiry_date[100];
+	time_t now;
+	struct tm *tm;
+
+	// Send the current date and time
+	time(&now);
+	tm = gmtime(&now);
+	// add 3 days
+	tm->tm_mday += 3;
+	strftime(expiry_date, sizeof(expiry_date), "Expires: %a, %d %b %Y %H:%M:%S %Z\r\n", tm); 
+	send(newsockfd, expiry_date, strlen(expiry_date), 0);	// send the expiry date
+}
+
 void send_file(FILE *fp, char *filename, int newsockfd){
 
 	// Send the content type
+	char *content_lang = "Content-Language: en-us\r\n";
+	send(newsockfd, content_lang, strlen(content_lang), 0);	// send the content language
 	char *content_type = get_content_type(filename);
 	send(newsockfd, content_type, strlen(content_type), 0);	// send the content type
 
@@ -121,7 +143,7 @@ void send_file(FILE *fp, char *filename, int newsockfd){
 	int size = ftell(fp);
 	fseek(fp, 0L, SEEK_SET);
 
-
+	printf("\n\nContent-Length: %d\n\n", size);
 	char content_len[30]; 
 	sprintf(content_len, "Content-Length: %d", size);
 	strcat(content_len, "\r\n\r\n");
@@ -250,36 +272,6 @@ void parse_headers(char *request, int newsockfd)
 
 
 
-void implement_GET(char *path, char **values, int newsockfd){
-	// putting a '.' before the path
-	char *modified_path = (char *)malloc(sizeof(char)*(sizeof(path)+1));
-	strcpy(modified_path, "."); strcat(modified_path, path);
-
-	printf("\n\nSending: %s\n\n", modified_path); fflush(stdout);
-
-	FILE *fp = fopen(modified_path, "rb");
-
-	// File Not Found
-	if (fp == NULL) {
-		perror("Could not open file\n");
-		implement_error(NOTFOUND, newsockfd);
-		return;
-	}
-
-	// File Found
-	char *first_line = "HTTP/1.1 200 OK\r\n";
-	send(newsockfd, first_line, strlen(first_line), 0);
-	send_date_server(newsockfd);
-
-	// Send the file type, length and content
-	send_file(fp, path, newsockfd);
-
-
-	// Close the file
-	fclose(fp);
-
-}
-
 void receive_file_content(FILE *fp, int content_length, int newsockfd)
 {
 	// if there is any extra data in the buffer received along with the headers
@@ -317,7 +309,7 @@ void implement_PUT(char *path, char **values, int newsockfd)
 
 
 	// receive the file content
-	int content_length = atoi(values[3]);	// "content-length:"  is at 3rd index
+	int content_length = atoi(values[CONTENT_LENGTH_INDEX]);	// "content-length:"  is at 3rd index
 	receive_file_content(fp, content_length, newsockfd);
 	fclose(fp);
 
@@ -325,4 +317,53 @@ void implement_PUT(char *path, char **values, int newsockfd)
 	char *first_line = "HTTP/1.1 200 OK\r\n";
 	send(newsockfd, first_line, strlen(first_line), 0);	
 	send_date_server(newsockfd);
+	send_cache_ctrl(newsockfd);
+}
+
+void send_last_modified(char *filename, int newsockfd){
+    struct stat file_stat;
+
+	stat(filename, &file_stat);
+
+    struct tm *timeinfo;
+    timeinfo = gmtime(&file_stat.st_mtime);
+    char buffer[80];
+    strftime(buffer, 80, "%a, %d %b %Y %T GMT\n", timeinfo);
+    
+	send(newsockfd, "Last-Modified: ", 15, 0);
+	send(newsockfd, buffer, strlen(buffer), 0);
+	return;
+}
+
+void implement_GET(char *path, char **values, int newsockfd){
+	// putting a '.' before the path
+	char *modified_path = (char *)malloc(sizeof(char)*(sizeof(path)+1));
+	strcpy(modified_path, "."); strcat(modified_path, path);
+
+	printf("\n\nSending: %s\n\n", modified_path); fflush(stdout);
+
+	FILE *fp = fopen(modified_path, "rb");
+
+	// File Not Found
+	if (fp == NULL) {
+		perror("Could not open file\n");
+		implement_error(NOTFOUND, newsockfd);
+		return;
+	}
+
+	// File Found
+	char *first_line = "HTTP/1.1 200 OK\r\n";
+	send(newsockfd, first_line, strlen(first_line), 0);
+	send_date_server(newsockfd);
+	send_expiry(newsockfd);	// send the expiry date
+	send_cache_ctrl(newsockfd);
+	send_last_modified(modified_path, newsockfd);
+
+	// Send the file type, length and content
+	send_file(fp, path, newsockfd);
+
+
+	// Close the file
+	fclose(fp);
+
 }
