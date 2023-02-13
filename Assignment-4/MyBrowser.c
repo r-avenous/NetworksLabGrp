@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include <sys/wait.h>
 
 #define NOTFOUND 404
 #define OK 200
