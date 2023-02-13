@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 		// receive the request from the client
 		receive_headers(newsockfd, buf, BUF_SIZE);
 		printf("\n\nRequest received:\n%s\n", buf); fflush(stdout);
-		parse_headers(buf);
+		parse_headers(buf, newsockfd);
 
 		if(strcmp(method, "GET")==0){
 			implement_GET(path, values, newsockfd);
@@ -48,9 +48,9 @@ int main(int argc, char **argv)
 		else if(strcmp(method, "PUT")==0){
 			implement_PUT(path, values, newsockfd);
 		}
-		// else{
-		// 	implement_error(BADREQUEST, newsockfd);
-		// }
+		else{
+			implement_error(BADREQUEST, newsockfd);
+		}
 		close(newsockfd);
 	}
 	return 0;

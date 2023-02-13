@@ -110,12 +110,17 @@ void receive_headers(int sockfd, char *buf, int size)
 }
 
 
-void parse_headers(char *request)
+void parse_headers(char *request, int newsockfd)
 {
 	char *version; int header_count; char **headers;
 	method = strsep(&request, " ");
 	path = strsep(&request, " ");
 	version = strsep(&request, "\r\n ");
+	if(method == NULL || path == NULL || version == NULL)
+	{
+		implement_error(BADREQUEST, newsockfd);
+		return;
+	}
 
 	printf("Method: %s\n", method);
 	printf("Path: %s\n", path);
@@ -237,6 +242,24 @@ void implement_error_404(int newsockfd){
 	send_file(fp, "404.html", newsockfd);
 }
 
+void implement_error(int error_code, int newsockfd){
+	if(error_code==BADREQUEST)
+	{
+		char *first_line = "HTTP/1.1 400 Bad Request\r\n";
+		send(newsockfd, first_line, strlen(first_line), 0);	
+	}
+	else if(error_code==FORBIDDEN)
+	{
+		char *first_line = "HTTP/1.1 403 Forbidden\r\n";
+		send(newsockfd, first_line, strlen(first_line), 0);	
+	}
+	else if(error_code==NOTFOUND)
+	{
+		send_general_response(404, newsockfd);
+		FILE *fp = fopen("404.html", "r");
+		send_file(fp, "404.html", newsockfd);
+	}
+}
 
 void implement_GET(char *path, char **values, int newsockfd){
 	// putting a '.' before the path
