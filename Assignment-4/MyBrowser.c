@@ -21,7 +21,7 @@
 #define LOCALHOST "127.0.0.1"
 #define MAXLINE 1500
 #define MAXCONNECTIONS 5
-#define DURATION 5000
+#define DURATION 3000
 
 void get(char *url);                                                                            // Implements GET {url}
 void put(char *url, char *filename);                                                            // Implements PUT {url} <filename>
@@ -165,6 +165,16 @@ void get(char *url)
 
     // download function complete
     char response[MAXLINE];
+    // timeout of 3 seconds with poll
+    struct pollfd pfd;
+    pfd.fd = sockfd;
+    pfd.events = POLLIN;
+    int ret = poll(&pfd, 1, DURATION);
+    if (ret == 0)
+    {
+        printf("Timeout\n");
+        return;
+    }
     int r = recv(sockfd, response, MAXLINE, MSG_WAITALL);
     // get status code
     int status_code = atoi(response + 9);
@@ -285,6 +295,16 @@ void put(char *url, char *filename)
     upload_file(filename, sockfd);
     // -------
     char response[MAXLINE];
+    // timeout of 3 seconds with poll
+    struct pollfd pfd;
+    pfd.fd = sockfd;
+    pfd.events = POLLIN;
+    int ret = poll(&pfd, 1, DURATION);
+    if (ret == 0)
+    {
+        printf("Timeout\n");
+        return;
+    }
     int r = recv(sockfd, response, MAXLINE, MSG_WAITALL);
     printf("%s\n", response);
     close(sockfd);
