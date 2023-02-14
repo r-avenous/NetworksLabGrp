@@ -175,6 +175,9 @@ void get(char *url)
         printf("Timeout\n");
         return;
     }
+
+    //////////////////////////// receive response ////////////////////////////
+    
     int r = recv(sockfd, response, MAXLINE, MSG_WAITALL);
     // get status code
     int status_code = atoi(response + 9);
