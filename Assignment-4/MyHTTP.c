@@ -74,10 +74,22 @@ int main(int argc, char **argv)
 			}
 			printf("\n\n");
 			implement_GET(path, values, newsockfd);
+			FILE* fp = fopen(LOGGILE, "a");
+			// <Date(ddmmyy)>:<Time(hhmmss)>:<Client IP>:<Client Port>:<GET/PUT>:<URL>
+			time_t t = time(NULL);
+			struct tm tm = *localtime(&t);
+			fprintf(fp, "%02d-%02d-%02d:%02d-%02d-%02d:%s:%d:%s:%s\n", tm.tm_mday, tm.tm_mon+1, tm.tm_year+1900, tm.tm_hour, tm.tm_min, tm.tm_sec, inet_ntoa(cli_addr.sin_addr), ntohs(cli_addr.sin_port), method, path);
+			fclose(fp);
 			free_all();
 		}
 		else if(strcmp(method, "PUT")==0){
 			implement_PUT(path, values, newsockfd);
+			FILE* fp = fopen(LOGGILE, "a");
+			// <Date(ddmmyy)>:<Time(hhmmss)>:<Client IP>:<Client Port>:<GET/PUT>:<URL>
+			time_t t = time(NULL);
+			struct tm tm = *localtime(&t);
+			fprintf(fp, "%02d-%02d-%02d:%02d-%02d-%02d:%s:%d:%s:%s\n", tm.tm_mday, tm.tm_mon+1, tm.tm_year+1900, tm.tm_hour, tm.tm_min, tm.tm_sec, inet_ntoa(cli_addr.sin_addr), ntohs(cli_addr.sin_port), method, path);
+			fclose(fp);
 			free_all();
 		}
 		else{
