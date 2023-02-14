@@ -192,7 +192,7 @@ void get(char *url)
     }
     else if (status_code != OK)
     {
-        printf("Unknown Error\n");
+        printf("%d Unknown Error\n", status_code);
     }
     char *pt2 = stristr(response, "Content-Type: ");
     if (pt2 == NULL)
