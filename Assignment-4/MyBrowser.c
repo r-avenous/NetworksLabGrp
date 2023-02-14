@@ -468,6 +468,16 @@ void download_file(char *filename, int sockfd, int size, char *content, int cont
     while (r < size)
     {
         char buffer[MAXLINE];
+        // timeout of 3 seconds with poll
+        struct pollfd pfd;
+        pfd.fd = sockfd;
+        pfd.events = POLLIN;
+        int ret = poll(&pfd, 1, DURATION);
+        if (ret == 0)
+        {
+            printf("Timeout\n");
+            return;
+        }
         int n = recv(sockfd, buffer, MAXLINE, 0);
         fwrite(buffer, n, 1, fp);
         r += n;
