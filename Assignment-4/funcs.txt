@@ -1,4 +1,5 @@
 GET http://127.0.0.1:8000/Hello.txt
 GET http://127.0.0.1:8000/queries.sql
 GET http://127.0.0.1:8000/Assgn-3.pdf
-PUT http://127.0.0.1:8000/tt/ Bruh.jpg
+PUT http://127.0.0.1:8050/tt/ Bruh.jpg
+PUT http://127.0.0.1:8000/ Bruh.jpg

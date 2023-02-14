@@ -23,6 +23,8 @@
 #define MAXCONNECTIONS 5
 #define DURATION 3000
 
+
+
 void get(char *url);                                                                            // Implements GET {url}
 void put(char *url, char *filename);                                                            // Implements PUT {url} <filename>
 void get_to_request(char *url, char *request);                                                  // converts get command to HTTP request
@@ -42,6 +44,149 @@ int curfileType;   // current file type
 char *curfilename; // current filename
 
 int port_no = 80; // default port number
+
+
+
+
+
+
+
+
+char extra_data[MAXLINE];
+int extra_data_size = 0;
+
+char *version = NULL;
+char *status_code = NULL;
+char *status_message = NULL; 
+
+char *headers[] = {"Content-Length:", "Content-Type:"};
+char *values[] = {NULL, NULL};
+int header_count = 2;
+
+int min(int a, int b);
+void free_all()
+{
+	if(version) free(version);
+	if(status_code) free(status_code);
+	if(status_message) free(status_message);
+	version=NULL; status_code=NULL; status_message=NULL;
+	for(int i=0; i<header_count; ++i){
+		if(values[i])
+			free(values[i]);
+		values[i]=NULL;
+	}
+}
+
+char *deep_copy(char *str)
+{
+	char *copy = (char *)malloc(strlen(str) + 1);
+	strcpy(copy, str);
+	return copy;
+}
+
+void parse_first_line(char *request)
+{
+	version = deep_copy(strsep(&request, " "));
+	status_code = deep_copy(strsep(&request, " "));
+	status_message = deep_copy(strsep(&request, "\r"));
+}
+
+
+void parse_headers(char *line)
+{
+
+	char *header = strsep(&line, " ");	
+	char *value = strsep(&line, "\r");
+
+	for(int i=0; i<header_count; ++i){
+		if(strcasecmp(header, headers[i])==0){
+			values[i] = deep_copy(value);
+			break;
+		}
+	}	
+
+}
+
+void receive_headers(int sockfd, char *buf, int size)
+{
+	int bytes_received = 0;
+	buf[0] = '\0';
+	int line_break = 0, end_of_req = 0;
+	int first_line = 1;
+	while (bytes_received < size)
+	{
+		int bytes = recv(sockfd, buf + bytes_received, min(size - bytes_received, MAXLINE), 0);
+		if (bytes == -1)
+		{
+			perror("Error in receiving data");
+			exit(0);
+		}
+		if (bytes == 0)
+		{
+			break;
+		}
+
+		for (int i = 0; i < bytes; ++i)
+		{
+			char ch = buf[bytes_received + i];
+			if (ch == ' ' || ch == '\t' || ch == '\r')
+				continue;
+
+			if (ch == '\n')
+			{	
+				buf[bytes_received + i] = '\0';
+				printf("## Received: %s\n", buf); fflush(stdout);
+
+				if(first_line){
+					parse_first_line(buf);
+					first_line = 0;
+
+				}
+				else{
+					parse_headers(buf);
+				}
+
+				strcpy(buf, buf + bytes_received+i+1);
+				line_break++;
+				bytes_received = -i-1;
+
+				if (line_break == 2)
+				{
+					strcpy(extra_data, buf + bytes_received + i + 1);
+					extra_data_size = bytes - i - 1;
+					end_of_req = 1;
+					break;
+				}
+			}
+			else
+			{
+				line_break = 0;
+			}
+		}
+
+		bytes_received += bytes;
+		if (end_of_req)
+		{
+			buf[bytes_received] = '\0';
+			break;
+		}
+
+		if (buf[bytes_received - 1] == '\0')
+		{
+			break;
+		}
+	}
+}
+
+
+
+
+
+
+
+
+
+
 int main(int argc, char *argv[])
 {
     if (argc > 1)
@@ -178,31 +323,38 @@ void get(char *url)
 
     //////////////////////////// receive response ////////////////////////////
     
-    int r = recv(sockfd, response, MAXLINE, MSG_WAITALL);
+    receive_headers(sockfd, response, MAXLINE);
+
+    printf("Status-Code %s\n", status_code);
+    for(int i=0; i<header_count; ++i){
+        printf("%s %s\n", headers[i], values[i]);
+    }
     // get status code
-    int status_code = atoi(response + 9);
-    if (status_code == NOTFOUND)
+    int st_code = atoi(status_code);
+    if (st_code == NOTFOUND)
     {
         printf("404 Not Found\n");
     }
-    else if (status_code == BADREQUEST)
+    else if (st_code == BADREQUEST)
     {
         printf("400 Bad Request\n");
     }
-    else if (status_code == FORBIDDEN)
+    else if (st_code == FORBIDDEN)
     {
         printf("403 Forbidden\n");
     }
-    else if (status_code != OK)
+    else if (st_code != OK)
     {
-        printf("%d Unknown Error\n", status_code);
+        printf("%d Unknown Error\n", st_code);
     }
-    char *pt2 = stristr(response, "Content-Type: ");
+    char *pt2 = values[1];
     if (pt2 == NULL)
     {
+        printf("\n1\n");
         return;
     }
-    pt2 += 14;
+
+   
     char *pt3 = stristr(pt2, "text/html");
     if (pt3 != NULL && pt3 < pt2 + 10)
     {
@@ -230,17 +382,17 @@ void get(char *url)
     }
 
     printf("%s\n", response);
-    char *pt = stristr(response, "Content-Length: ");
+    char *pt = values[0];
     // if content length is not present
     if (pt == NULL)
     {
+        printf("\n2\n");
         return;
     }
-    int size = atoi(pt + 16);
-    pt = stristr(response, "\r\n\r\n");
-    pt += 4;
-    size -= r - (pt - response);
-    download_file("untitled", sockfd, size, pt, r - (pt - response));
+    int size = atoi(values[0]);
+
+   
+    download_file("untitled", sockfd, size, extra_data, extra_data_size);
     // -------
     close(sockfd);
 
@@ -515,12 +667,13 @@ void upload_file(char *filename, int sockfd)
     FILE *fp;
     fp = fopen(filename, "rb");
     fseek(fp, 0, SEEK_END);
-    char buffer[MAXLINE];
+    
     int size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
     int r = 0;
     while (r < size)
     {
+        char buffer[MAXLINE];
         int n = fread(buffer, 1, MAXLINE, fp);
         send(sockfd, buffer, n, 0);
         r += n;
