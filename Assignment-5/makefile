@@ -1,6 +1,6 @@
-test: test.c mysocket.c mysocket.h
-	gcc test.c mysocket.c -o test
-	./test
+test: mysocket.c mysocket.h
+	gcc testserv.c mysocket.c -o ts
+	gcc testcli.c mysocket.c -o tc
 
 clean:
-	rm -f test
+	rm -f ts tc

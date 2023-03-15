@@ -52,7 +52,13 @@ int my_connect(int sockfd, struct sockaddr* servaddr, int servlen)
 }
 
 
-
+void connection_close_check(int c)
+{
+    if(c) return;
+    printf("Connection closed\n");
+    pthread_cancel(S);
+    pthread_exit(NULL);
+}
 void* RThread(void* arg)
 {   
     while(sr_socket==-1);
@@ -60,14 +66,18 @@ void* RThread(void* arg)
         int count=0;
         unsigned char *msg_len = (unsigned char*)malloc(2);
         count = recv(sr_socket, msg_len, 2, 0);
+        connection_close_check(count);
         if(count == -1){
             perror("Error in receiving message length: -1");
             exit(1);
         }
-        if(count == 1){
-            count += recv(sr_socket, msg_len+1, 1, 0);
+        if(count == 1)
+        {
+            int count2 = recv(sr_socket, msg_len+1, 1, 0);
+            connection_close_check(count2);
+            count += count2;
         }
-        printf("%d, %s\n", count, msg_len);
+        // printf("%d, %s\n", count, msg_len);
         if(count != 2){
             perror("Error in receiving message length");
             exit(1);
@@ -84,7 +94,9 @@ void* RThread(void* arg)
             int rec_len = 0;
             while(rec_len<len){
                 count = recv(sr_socket, Recieved_Message[recv_in]+rec_len, min(len-rec_len, MAXLINE), 0);
-                if(count == -1){
+                connection_close_check(count);
+                if(count == -1)
+                {
                     perror("Error in receiving message");
                     exit(1);
                 }
