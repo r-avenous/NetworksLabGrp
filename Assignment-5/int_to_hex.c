@@ -15,7 +15,7 @@ int main(){
     while(1){
         int n;
         scanf("%d", &n);
-        unsigned char ch = int_to_hex(n);
+        char ch = n;
         printf("%c\n", ch);
         int m = ch;
         printf("%d\n-----\n\n", m);

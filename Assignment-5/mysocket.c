@@ -51,24 +51,23 @@ int my_connect(int sockfd, struct sockaddr* servaddr, int servlen)
     return connect(sockfd, servaddr, servlen);
 }
 
-unsigned char int_to_hex(int n){
-    unsigned char ch, hex[5];
-    sprintf(hex, "%x", n);
-    // printf("%s\n", hex);
-    sscanf(hex, "%hhx", &ch);
-    return ch; 
-}
+
 
 void* RThread(void* arg)
 {   
     while(sr_socket==-1);
     while(1){
-        int count;
+        int count=0;
         unsigned char *msg_len = (unsigned char*)malloc(2);
         count = recv(sr_socket, msg_len, 2, 0);
+        if(count == -1){
+            perror("Error in receiving message length: -1");
+            exit(1);
+        }
         if(count == 1){
             count += recv(sr_socket, msg_len+1, 1, 0);
         }
+        printf("%d, %s\n", count, msg_len);
         if(count != 2){
             perror("Error in receiving message length");
             exit(1);
@@ -121,8 +120,8 @@ void* SThread(void* arg)
         int len = Send_Message_Size[send_out];
 
         unsigned char *msg_len = (unsigned char*)malloc(2);
-        msg_len[0] = int_to_hex(len/256);
-        msg_len[1] = int_to_hex(len%256);
+        msg_len[0] = len/256;
+        msg_len[1] = len%256;
         
 
         int count;
