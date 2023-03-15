@@ -2,27 +2,28 @@
 
 #define TIMEOUT 1
 
-char *Send_Message[10], Recieved_Message[10][MAXMSGSIZE];
+char Send_Message[10][MAXMSGSIZE], Recieved_Message[10][MAXMSGSIZE];
+int Send_Message_Size[10], Recieved_Message_Size[10];
 pthread_t R, S;
 pthread_mutex_t R_Mutex, S_Mutex;
-pthread_cond_t send_cond, recv_cond;
+pthread_cond_t send_cond, recv_cond_empt, recv_cond_full;
 int sr_socket, send_counter, recv_counter, send_in, send_out, recv_in, recv_out;
 
 int my_socket(int domain, int type, int protocol)
 {
     if(type != SOCK_MyTCP) return -1;
-    send_counter = 0;
-    recv_counter = 0;
-    for(int i=0; i<10; i++)
-    {
-        Send_Message[i] = NULL;
-    }
+    send_counter = 0; recv_counter = 0;
+    send_in = 0; send_out = 0;
+    recv_in = 0; recv_out = 0;
+    sr_socket = -1;
+
     pthread_create(&R, NULL, RThread, NULL);
     pthread_create(&S, NULL, SThread, NULL);
     pthread_mutex_init(&R_Mutex, NULL);
     pthread_mutex_init(&S_Mutex, NULL);
-    pthread_cond_init(&recv_cond, NULL);
+    pthread_cond_init(&recv_cond_empt, NULL);
     pthread_cond_init(&send_cond, NULL);
+    pthread_cond_init(&recv_cond_full, NULL);
     return socket(domain, SOCK_STREAM, protocol);
 }
 
@@ -49,13 +50,110 @@ int my_connect(int sockfd, struct sockaddr* servaddr, int servlen)
     return connect(sockfd, servaddr, servlen);
 }
 
+unsigned char int_to_hex(int n){
+    unsigned char ch, hex[5];
+    sprintf(hex, "%x", n);
+    printf("%s\n", hex);
+    sscanf(hex, "%hhx", &ch);
+    return ch; 
+}
+
 void* RThread(void* arg)
-{
+{   
+    while(sr_socket==-1);
+    while(1){
+        int count;
+        unsigned char *msg_len = (unsigned char*)malloc(2);
+        count = recv(sr_socket, msg_len, 2, 0);
+        if(count == 1){
+            count += recv(sr_socket, msg_len+1, 1, 0);
+        }
+        if(count != 2){
+            perror("Error in receiving message length");
+            exit(1);
+        }
+
+        int len = 256*(int)msg_len[0] + (int)msg_len[1];
+        free(msg_len);
+
+        pthread_mutex_lock(&R_Mutex);
+        if(recv_counter == 10) 
+            pthread_cond_wait(&recv_cond_full, &R_Mutex);
+        
+        if(recv_counter < 10){
+            int rec_len = 0;
+            while(rec_len<len){
+                count = recv(sr_socket, Recieved_Message[recv_in]+rec_len, min(len-rec_len, MAXLINE), 0);
+                if(count == -1){
+                    perror("Error in receiving message");
+                    exit(1);
+                }
+                rec_len += count;
+            }
+            Recieved_Message_Size[recv_in] = len;
+            recv_in = (recv_in+1)%10;
+            recv_counter++;
+
+        }
+
+        if(recv_counter == 1) 
+            pthread_cond_signal(&recv_cond_empt);
+        pthread_mutex_unlock(&R_Mutex);
+    }
     return NULL;
 }
 
+
 void* SThread(void* arg)
 {
+    while(sr_socket==-1);
+    while(1){ 
+        pthread_mutex_lock(&S_Mutex);
+        if(send_counter==0){
+            pthread_mutex_unlock(&S_Mutex);
+            sleep(TIMEOUT);
+            continue;
+        }
+
+        
+        char *msg = Send_Message[send_out];
+        int len = Send_Message_Size[send_out];
+
+        unsigned char *msg_len = (unsigned char*)malloc(2);
+        msg_len[0] = int_to_hex(len/256);
+        msg_len[1] = int_to_hex(len%256);
+        
+
+        int count;
+
+        count = send(sr_socket, msg_len, 2, 0);
+        if(count != 2){
+            perror("Error in sending message length");
+            exit(1);
+        }
+
+        while(len){
+            count = send(sr_socket, msg, min(len, MAXLINE), 0);
+            if(count == -1){
+                perror("Error in sending message");
+                exit(1);
+            }
+            len -= count;
+            msg += count;
+        }
+
+
+        free(msg_len);
+        send_out = (send_out+1)%10;
+        send_counter--;
+        pthread_cond_signal(&send_cond);
+        pthread_mutex_unlock(&S_Mutex);
+        
+
+    }
+
+
+
     return NULL;
 }
 
@@ -68,8 +166,9 @@ int my_send(int sockfd, char* msg, int len, int flag)
     if(send_counter < 10)
     {
         l = min(len, MAXMSGSIZE);
-        Send_Message[send_in] = (char*)malloc(l);
+
         memcpy(Send_Message[send_in], msg, l);
+        Send_Message_Size[send_in] = l;
         send_counter++;
         send_in = (send_in + 1) % 10;
     }
@@ -82,7 +181,8 @@ int my_recv(int sockfd, char* buf, int len, int flag)
     if(sockfd != sr_socket) return -1;
     int l = 0;
     pthread_mutex_lock(&R_Mutex);
-    if(recv_counter == 0) pthread_cond_wait(&recv_cond, &R_Mutex);
+    if(recv_counter == 0) 
+        pthread_cond_wait(&recv_cond_empt, &R_Mutex);
     if(recv_counter)
     {
         l = min(len, MAXMSGSIZE);
@@ -90,6 +190,9 @@ int my_recv(int sockfd, char* buf, int len, int flag)
         recv_out = (recv_out+1)%10;
         recv_counter--;
     }
+    
+    if(recv_counter == 9) 
+        pthread_cond_signal(&recv_cond_full);
     pthread_mutex_unlock(&R_Mutex);
     return l;
 }
@@ -102,6 +205,6 @@ void my_close()
     pthread_mutex_destroy(&R_Mutex);
     pthread_mutex_destroy(&S_Mutex);
     pthread_cond_destroy(&send_cond);
-    pthread_cond_destroy(&recv_cond);
+    pthread_cond_destroy(&recv_cond_empt);
     
 }
