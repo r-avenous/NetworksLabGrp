@@ -2,6 +2,7 @@
 
 #define TIMEOUT 1
 
+int min(int a, int b) {return (a<b)?a:b;}
 char Send_Message[10][MAXMSGSIZE], Recieved_Message[10][MAXMSGSIZE];
 int Send_Message_Size[10], Recieved_Message_Size[10];
 pthread_t R, S;
@@ -53,7 +54,7 @@ int my_connect(int sockfd, struct sockaddr* servaddr, int servlen)
 unsigned char int_to_hex(int n){
     unsigned char ch, hex[5];
     sprintf(hex, "%x", n);
-    printf("%s\n", hex);
+    // printf("%s\n", hex);
     sscanf(hex, "%hhx", &ch);
     return ch; 
 }
@@ -197,11 +198,12 @@ int my_recv(int sockfd, char* buf, int len, int flag)
     return l;
 }
 
-void my_close()
+void my_close(int sockfd)
 {
+    if(sockfd != sr_socket) return;
     pthread_cancel(R);
     pthread_cancel(S);
-    for(int i=0; i<10; i++) free(Send_Message[i]);
+    // for(int i=0; i<10; i++) free(Send_Message[i]);
     pthread_mutex_destroy(&R_Mutex);
     pthread_mutex_destroy(&S_Mutex);
     pthread_cond_destroy(&send_cond);
