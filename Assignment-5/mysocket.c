@@ -57,6 +57,11 @@ void connection_close_check(int c)
     if(c) return;
     sr_socket = -1;
     printf("Connection closed\n");
+    pthread_mutex_unlock(&R_Mutex);
+    pthread_cond_signal(&recv_cond_empt);
+    // pthread_cond_signal(&send_cond);
+    // pthread_cond_signal(&recv_cond_full);
+    sleep(1);
     pthread_cancel(S);
     pthread_exit(NULL);
 }
@@ -212,6 +217,7 @@ int my_recv(int sockfd, char* buf, int len, int flag)
 void my_close(int sockfd)
 {
     if(sockfd != sr_socket) return;
+    sleep(1);
     pthread_cancel(R);
     pthread_cancel(S);
     // for(int i=0; i<10; i++) free(Send_Message[i]);

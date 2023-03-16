@@ -1,8 +1,8 @@
-test: mysocket.c mysocket.h
+test:
 	gcc testserv.c ../mysocket.c -pthread -o ts
 	gcc testcli.c ../mysocket.c -pthread -o tc
 
-library: mysocket.c mysocket.h
+library:
 	gcc -c ../mysocket.c -pthread -o mysocket.o
 	ar rcs libmysocket.a mysocket.o
 

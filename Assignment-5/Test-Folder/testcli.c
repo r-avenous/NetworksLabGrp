@@ -7,7 +7,7 @@
 #include <time.h>
 #include "mysocket.h"
 
-#define PORT 8085
+#define PORT 8087
 
 char* generate_random_string(int length) {
     char* str = malloc((length + 1) * sizeof(char));
