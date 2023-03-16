@@ -28,7 +28,8 @@ int my_socket(int domain, int type, int protocol)
     return socket(domain, SOCK_STREAM, protocol);
 }
 
-int my_bind(int sockfd, struct sockaddr *addr_ptr, size_t addr_size){
+int my_bind(int sockfd, struct sockaddr *addr_ptr, size_t addr_size)
+{
     int status = bind(sockfd, addr_ptr, addr_size);
     return status;
 }
@@ -51,10 +52,10 @@ int my_connect(int sockfd, struct sockaddr* servaddr, int servlen)
     return connect(sockfd, servaddr, servlen);
 }
 
-
 void connection_close_check(int c)
 {
     if(c) return;
+    sr_socket = -1;
     printf("Connection closed\n");
     pthread_cancel(S);
     pthread_exit(NULL);
@@ -62,12 +63,14 @@ void connection_close_check(int c)
 void* RThread(void* arg)
 {   
     while(sr_socket==-1);
-    while(1){
+    while(1)
+    {
         int count=0;
         unsigned char *msg_len = (unsigned char*)malloc(2);
         count = recv(sr_socket, msg_len, 2, 0);
         connection_close_check(count);
-        if(count == -1){
+        if(count == -1)
+        {
             perror("Error in receiving message length: -1");
             exit(1);
         }
@@ -119,9 +122,11 @@ void* RThread(void* arg)
 void* SThread(void* arg)
 {
     while(sr_socket==-1);
-    while(1){ 
+    while(1)
+    { 
         pthread_mutex_lock(&S_Mutex);
-        if(send_counter==0){
+        if(send_counter==0)
+        {
             pthread_mutex_unlock(&S_Mutex);
             sleep(TIMEOUT);
             continue;
