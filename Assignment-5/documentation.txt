@@ -63,9 +63,28 @@ int my_connect(int sockfd, struct sockaddr* servaddr, int servlen)
 void connection_close_check(int c)
 
 // function for receiver thread
+// waits for sr_socket to be initialised by my_connect or my_accept
+// first receives the size of the message 
+// the message size is encoded in the first 2 bytes of the message as 2 unsigned chars
+// checks whether the buffer is full and waits for a free slot if it is full using recv_cond_full conditional variable
+// if the buffer is not full or if the condition is signalled, it locks the R_Mutex for the receive buffer
+// receives the rest of the message according to the size received in chunks of max size MAXLINE
+// stores the message in the receive buffer and increments the recv_counter and recv_in
+// unlocks the R_Mutex
+// if the buffer was empty before the message was received, it signals the recv_cond_empt conditional variable (to be used by my_recv)
+// RThread is a producer
 void* RThread(void* arg)
 
 // function for sender thread
+// waits for sr_socket to be initialised by my_connect or my_accept
+// sleeps and wakes periodically
+// locks the S_Mutex for the send buffer
+// checks whether there is a message to be sent in the send buffer
+// if there isnt, it unlocks the S_Mutex and continues to sleep again
+// if there is, it first gets the size of the message to be sent and encodes it
+// it sends the size of the message first
+// then it sends the message in chunks of max size MAXLINE and unlocks the S_Mutex
+// if the buffer was full before the message was sent, it signals the send_cond conditional variable (to be used by my_send)
 void* SThread(void* arg)
 
 // send a message to the socket; blocks until a slot is available in the buffer
@@ -78,5 +97,18 @@ int my_recv(int sockfd, char* buf, int len, int flag)
 void my_close(int sockfd)
 
 ### Flow of Control for my_recv ###
+if the sr_socket is not initialised, i.e. my_connect / my_accept has not been called, it just returns -1 as Error
+my_recv waits for the recv_cond_empt conditional variable to be signalled by the receiver thread or if the buffer is not empty R_Mutex is locked and the message is received
+if the buffer is empty, it waits for the recv_cond_empt conditional variable to be signalled by the receiver thread and once received, it locks the R_Mutex
+minimum of the length parameter and the maximum allowed message size is taken as the length of the message to be received
+the message is copied from the buffer table into the parameter char pointer buf
+if the buffer was full before the message was received, it signals the recv_cond_full conditional variable (to be used by receiver thread)
+unlocks the R_Mutex
 
 ### Flow of Control for my_send ###
+if the sr_socket is not initialised, i.e. my_connect / my_accept has not been called, it just returns -1 as Error
+my_send waits for the send_cond conditional variable to be signalled by the sender thread if the send buffer is full; once received it locks the S_Mutex
+if the buffer is not full S_Mutex is locked
+minimum of the length parameter and the maximum allowed message size is taken as the length of the message to be sent
+the message is copied from the parameter char pointer buf into the buffer table
+unlocks the S_Mutex

@@ -1,6 +1,6 @@
 #include "mysocket.h"
 
-#define TIMEOUT 1
+#define TIMEOUT 0.5
 
 int min(int a, int b) {return (a<b)?a:b;}
 char Send_Message[10][MAXMSGSIZE], Recieved_Message[10][MAXMSGSIZE];
@@ -126,11 +126,11 @@ void* SThread(void* arg)
     while(sr_socket==-1);
     while(1)
     { 
+        sleep(TIMEOUT);
         pthread_mutex_lock(&S_Mutex);
         if(send_counter==0)
         {
             pthread_mutex_unlock(&S_Mutex);
-            sleep(TIMEOUT);
             continue;
         }
 
