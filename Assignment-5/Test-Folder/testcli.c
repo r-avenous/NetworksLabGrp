@@ -7,7 +7,7 @@
 #include <time.h>
 #include "mysocket.h"
 
-#define PORT 8087
+#define PORT 8085
 
 char* generate_random_string(int length) {
     char* str = malloc((length + 1) * sizeof(char));
@@ -64,13 +64,15 @@ int main(int argc, char const *argv[]) {
     int i;
     for (i = 0; i<30; ++i){
         // Send message to server
-        strcpy(buffer, generate_random_string(100+i*3));
+        strcpy(buffer, generate_random_string(1+i));
         printf("%d:: %s\n",i+1, buffer);
         my_send(sock, buffer, strlen(buffer)+1, 0);
         
-        my_recv(sock, buffer, 1024, 0);
+        my_recv(sock, buffer, 2024, 0);
         printf("%d:: %s\n",i+1, buffer);
     }
+    fflush(stdout);
+    my_recv(sock, buffer, 2024, 0);
     my_close(sock);
     return 0;
 }

@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include "mysocket.h"
 
-#define PORT 8087
+#define PORT 8085
 
 char* generate_random_string(int length) {
     char* str = malloc((length + 1) * sizeof(char));
@@ -74,13 +74,13 @@ int main(int argc, char const *argv[]) {
         printf("%d:: %s\n", i+1, buffer);
 
         // Send message to client
-        strcpy(buffer, generate_random_string(200+i*i));
+        strcpy(buffer, generate_random_string(4+i));
         my_send(new_socket, buffer, strlen(buffer)+1, 0);
         printf("%d:: %s\n",i+1, buffer);
 
         memset(buffer, 0, sizeof(buffer));
     }
-    sleep(5);
+    
     my_close(new_socket);
     my_close(server_fd);
 
