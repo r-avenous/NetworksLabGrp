@@ -1,0 +1,63 @@
+### variables | macros ###
+
+// Maximum size of the buffer to be sent or received (in chunks)
+#define MAXLINE 1000
+// Maximum size of the message to be sent or received
+#define MAXMSGSIZE 5000
+// The id for the socket type; there is no actual significance to this number; it is just a random number
+#define SOCK_MyTCP 100
+
+// 2D char arrays to store the messages to be sent and received in a circular buffer of size 10
+char Send_Message[10][MAXMSGSIZE], Recieved_Message[10][MAXMSGSIZE];
+
+// int arrays to store the size of the messages to be sent and received in a circular buffer of size 10
+int Send_Message_Size[10], Recieved_Message_Size[10];
+
+// threads for the sender and receiver
+pthread_t R, S;
+
+// mutexes for access to the circular buffers
+pthread_mutex_t R_Mutex, S_Mutex;
+
+// send_cond is used by thread S to signal my_send function when the prior full buffer has a free slot
+// recv_cond_empt is used by thread R to signal my_recv function when the prior empty buffer has a message
+// recv_cond_full is used by thread R to signal my_recv function when the prior full buffer has a free slot
+pthread_cond_t send_cond, recv_cond_empt, recv_cond_full;
+
+// sr_socket is the socket descriptor which is used to send and receive messages and is only updated when there is a connection or if the connection is closed
+// send_counter is the number of items in the send circular buffer
+// recv_counter is the number of items in the receive circular buffer
+// send_in is the index of the next free slot in the send circular buffer
+// send_out is the index of the next slot to be sent in the send circular buffer
+// recv_in is the index of the next free slot in the receive circular buffer
+// recv_out is the index of the next slot to be received in the receive circular buffer
+// all of these variables are only updated by the sender and receiver threads
+// these variables along with the mutexes are used to implement the circular buffers as a producer consumer problem
+int sr_socket, send_counter, recv_counter, send_in, send_out, recv_in, recv_out;
+
+### functions ###
+
+// just a utility function to find the minimum of two integers
+int min(int a, int b)
+
+int my_socket(int domain, int type, int protocol)
+
+int my_bind(int sockfd, struct sockaddr *addr_ptr, size_t addr_size)
+
+int my_listen(int sockfd, int client_count)
+
+int my_accept(int sockfd, struct sockaddr* cliaddr, int* clilen)
+
+int my_connect(int sockfd, struct sockaddr* servaddr, int servlen)
+
+void connection_close_check(int c)
+
+void* RThread(void* arg)
+
+void* SThread(void* arg)
+
+int my_send(int sockfd, char* msg, int len, int flag)
+
+int my_recv(int sockfd, char* buf, int len, int flag)
+
+void my_close(int sockfd)
