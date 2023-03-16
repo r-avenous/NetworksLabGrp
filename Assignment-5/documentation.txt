@@ -105,7 +105,7 @@ the message is copied from the buffer table into the parameter char pointer buf
 if the buffer was full before the message was received, it signals the recv_cond_full conditional variable (to be used by receiver thread)
 unlocks the R_Mutex
 
-### Flow of Control for my_send ###
+### Flow of Control for my_send ### 
 if the sr_socket is not initialised, i.e. my_connect / my_accept has not been called, it just returns -1 as Error
 my_send waits for the send_cond conditional variable to be signalled by the sender thread if the send buffer is full; once received it locks the S_Mutex
 if the buffer is not full S_Mutex is locked

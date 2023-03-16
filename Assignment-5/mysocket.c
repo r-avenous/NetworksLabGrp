@@ -1,6 +1,6 @@
 #include "mysocket.h"
 
-#define TIMEOUT 0.5
+#define TIMEOUT 0.1
 
 int min(int a, int b) {return (a<b)?a:b;}
 char Send_Message[10][MAXMSGSIZE], Recieved_Message[10][MAXMSGSIZE];
@@ -59,9 +59,9 @@ void connection_close_check(int c)
     printf("Connection closed\n");
     pthread_mutex_unlock(&R_Mutex);
     pthread_cond_signal(&recv_cond_empt);
-    // pthread_cond_signal(&send_cond);
-    // pthread_cond_signal(&recv_cond_full);
-    sleep(1);
+    pthread_cond_signal(&send_cond);
+    pthread_cond_signal(&recv_cond_full);
+  
     pthread_cancel(S);
     pthread_exit(NULL);
 }
@@ -176,10 +176,11 @@ void* SThread(void* arg)
 
 int my_send(int sockfd, char* msg, int len, int flag)
 {
-    if(sockfd != sr_socket) return -1;
+    if(sockfd != sr_socket) return 0;
     int l = 0;
     pthread_mutex_lock(&S_Mutex);
-    while(send_counter == 10) pthread_cond_wait(&send_cond, &S_Mutex);
+    while(send_counter == 10 && sr_socket!=-1) 
+        pthread_cond_wait(&send_cond, &S_Mutex);
     if(send_counter < 10)
     {
         l = min(len, MAXMSGSIZE);
@@ -195,10 +196,10 @@ int my_send(int sockfd, char* msg, int len, int flag)
 
 int my_recv(int sockfd, char* buf, int len, int flag)
 {
-    if(sockfd != sr_socket) return -1;
+    if(sockfd != sr_socket) return 0;
     int l = 0;
     pthread_mutex_lock(&R_Mutex);
-    while(recv_counter == 0) 
+    while(recv_counter == 0 && sr_socket!=-1) 
         pthread_cond_wait(&recv_cond_empt, &R_Mutex);
     if(recv_counter)
     {
@@ -225,5 +226,7 @@ void my_close(int sockfd)
     pthread_mutex_destroy(&S_Mutex);
     pthread_cond_destroy(&send_cond);
     pthread_cond_destroy(&recv_cond_empt);
+    pthread_cond_destroy(&recv_cond_full);
+    close(sockfd);
     
 }
