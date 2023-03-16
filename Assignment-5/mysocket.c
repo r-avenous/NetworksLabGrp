@@ -36,7 +36,7 @@ int my_bind(int sockfd, struct sockaddr *addr_ptr, size_t addr_size)
 
 int my_listen(int sockfd, int client_count)
 {
-    listen(sockfd, client_count);
+    return listen(sockfd, client_count);
 }
 
 int my_accept(int sockfd, struct sockaddr* cliaddr, int* clilen)

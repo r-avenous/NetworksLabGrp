@@ -40,24 +40,43 @@ int sr_socket, send_counter, recv_counter, send_in, send_out, recv_in, recv_out;
 // just a utility function to find the minimum of two integers
 int min(int a, int b)
 
+// setup the circular buffers with condition variables, mutexes and start the sender and receiver threads
 int my_socket(int domain, int type, int protocol)
 
+// bind the socket to the given address; just a wrapper around the bind function; returns the status of the bind function; only used by the server
 int my_bind(int sockfd, struct sockaddr *addr_ptr, size_t addr_size)
+{
+    int status = bind(sockfd, addr_ptr, addr_size);
+    return status;
+}
 
+// listen for connections on the given socket; just a wrapper around the listen function; only used by the server
 int my_listen(int sockfd, int client_count)
 
+// accept a connection on the given socket; just a wrapper around the accept function; returns the new socket descriptor and initialises the sr_socket; only used by the server
 int my_accept(int sockfd, struct sockaddr* cliaddr, int* clilen)
 
+// connect to the given address; just a wrapper around the connect function; returns the status of the connect function; only used by the client; initialises the sr_socket
 int my_connect(int sockfd, struct sockaddr* servaddr, int servlen)
 
+// checks for the connection close condition and closes the socket and terminates the sender and receiver threads
 void connection_close_check(int c)
 
+// function for receiver thread
 void* RThread(void* arg)
 
+// function for sender thread
 void* SThread(void* arg)
 
+// send a message to the socket; blocks until a slot is available in the buffer
 int my_send(int sockfd, char* msg, int len, int flag)
 
+// receive a message from the socket; blocks until a message is received
 int my_recv(int sockfd, char* buf, int len, int flag)
 
+// close the socket and terminate the sender and receiver threads; destroy the mutexes and condition variables
 void my_close(int sockfd)
+
+### Flow of Control for my_recv ###
+
+### Flow of Control for my_send ###
