@@ -81,7 +81,8 @@ void* RThread(void* arg)
             count += count2;
         }
         // printf("%d, %s\n", count, msg_len);
-        if(count != 2){
+        if(count != 2)
+        {
             perror("Error in receiving message length");
             exit(1);
         }
@@ -90,12 +91,14 @@ void* RThread(void* arg)
         free(msg_len);
 
         pthread_mutex_lock(&R_Mutex);
-        if(recv_counter == 10) 
+        while(recv_counter == 10) 
             pthread_cond_wait(&recv_cond_full, &R_Mutex);
         
-        if(recv_counter < 10){
+        if(recv_counter < 10)
+        {
             int rec_len = 0;
-            while(rec_len<len){
+            while(rec_len<len)
+            {
                 count = recv(sr_socket, Recieved_Message[recv_in]+rec_len, min(len-rec_len, MAXLINE), 0);
                 connection_close_check(count);
                 if(count == -1)
@@ -108,7 +111,6 @@ void* RThread(void* arg)
             Recieved_Message_Size[recv_in] = len;
             recv_in = (recv_in+1)%10;
             recv_counter++;
-
         }
 
         if(recv_counter == 1) 
@@ -132,7 +134,6 @@ void* SThread(void* arg)
             continue;
         }
 
-        
         char *msg = Send_Message[send_out];
         int len = Send_Message_Size[send_out];
 
@@ -140,16 +141,15 @@ void* SThread(void* arg)
         msg_len[0] = len/256;
         msg_len[1] = len%256;
         
-
         int count;
-
         count = send(sr_socket, msg_len, 2, 0);
-        if(count != 2){
+        if(count != 2)
+        {
             perror("Error in sending message length");
             exit(1);
         }
-
-        while(len){
+        while(len)
+        {
             count = send(sr_socket, msg, min(len, MAXLINE), 0);
             if(count == -1){
                 perror("Error in sending message");
@@ -158,8 +158,6 @@ void* SThread(void* arg)
             len -= count;
             msg += count;
         }
-
-
         free(msg_len);
         send_out = (send_out+1)%10;
         send_counter--;
@@ -168,9 +166,6 @@ void* SThread(void* arg)
         
 
     }
-
-
-
     return NULL;
 }
 
@@ -179,7 +174,7 @@ int my_send(int sockfd, char* msg, int len, int flag)
     if(sockfd != sr_socket) return -1;
     int l = 0;
     pthread_mutex_lock(&S_Mutex);
-    if(send_counter == 10) pthread_cond_wait(&send_cond, &S_Mutex);
+    while(send_counter == 10) pthread_cond_wait(&send_cond, &S_Mutex);
     if(send_counter < 10)
     {
         l = min(len, MAXMSGSIZE);
@@ -198,7 +193,7 @@ int my_recv(int sockfd, char* buf, int len, int flag)
     if(sockfd != sr_socket) return -1;
     int l = 0;
     pthread_mutex_lock(&R_Mutex);
-    if(recv_counter == 0) 
+    while(recv_counter == 0) 
         pthread_cond_wait(&recv_cond_empt, &R_Mutex);
     if(recv_counter)
     {
