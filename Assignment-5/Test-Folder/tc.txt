@@ -142,7 +142,7 @@ END
 
 START:-
 
-=
+%
 
 END
 
@@ -158,7 +158,7 @@ END
 
 START:-
 
-=
+%i
 
 END
 
@@ -175,7 +175,7 @@ END
 
 START:-
 
-=
+%iR
 
 END
 
@@ -193,7 +193,7 @@ END
 
 START:-
 
-=y
+%iR2
 
 END
 
@@ -202,7 +202,7 @@ END
 
 START:-
 
-w
+%
 
 END
 
@@ -211,7 +211,7 @@ END
 
 START:-
 
-wTs4
+%iR2W
 
 END
 
@@ -220,7 +220,7 @@ END
 
 START:-
 
-wT
+7(
 
 END
 
@@ -229,7 +229,7 @@ END
 
 START:-
 
-wTs49
+7(6~G
 
 END
 
@@ -238,7 +238,7 @@ END
 
 START:-
 
-wT
+7(6
 
 END
 
@@ -247,7 +247,7 @@ END
 
 START:-
 
-wTs49V
+7(6~G
 
 END
 
@@ -256,7 +256,7 @@ END
 
 START:-
 
-wTs
+7(6
 
 END
 
@@ -265,7 +265,7 @@ END
 
 START:-
 
-wTs49V 
+7(6~G
 
 END
 
@@ -274,7 +274,7 @@ END
 
 START:-
 
-wTs4
+7(6~
 
 END
 
@@ -283,7 +283,7 @@ END
 
 START:-
 
-wTs49V 
+7(6~G:
 
 END
 
@@ -292,7 +292,7 @@ END
 
 START:-
 
-wTs49
+7(6~G
 
 END
 
@@ -301,7 +301,7 @@ END
 
 START:-
 
-wTs49V k
+7(6~G:
 
 END
 
@@ -310,7 +310,7 @@ END
 
 START:-
 
-wTs49V
+7(6~G
 
 END
 
@@ -319,7 +319,7 @@ END
 
 START:-
 
-wTs49V kM
+7(6~G:O
 
 END
 
@@ -328,7 +328,7 @@ END
 
 START:-
 
-wTs49V 
+7(6~G
 
 END
 
@@ -337,7 +337,7 @@ END
 
 START:-
 
-wTs49V kMS
+7(6~G:OE
 
 END
 
@@ -346,7 +346,7 @@ END
 
 START:-
 
-wTs49V 
+7(6~G:
 
 END
 
@@ -355,7 +355,7 @@ END
 
 START:-
 
-wTs49V kMS:
+7(6~G:OEt
 
 END
 
@@ -364,7 +364,7 @@ END
 
 START:-
 
-wTs49V k
+7(6~G:
 
 END
 
@@ -373,7 +373,7 @@ END
 
 START:-
 
-wTs49V kMS:|
+7(6~G:OEt
 
 END
 
@@ -382,7 +382,7 @@ END
 
 START:-
 
-wTs49V kM
+7(6~G:O
 
 END
 
@@ -391,7 +391,7 @@ END
 
 START:-
 
-[?ai7TbE&c
+7(6~G:OEt
 
 END
 
@@ -400,7 +400,7 @@ END
 
 START:-
 
-[?ai7TbE
+7(6~G:OE
 
 END
 
@@ -409,7 +409,7 @@ END
 
 START:-
 
-[?ai7TbE&c/
+7(6~G:OEtx
 
 END
 
@@ -418,7 +418,7 @@ END
 
 START:-
 
-[?ai7TbE&
+=5V1)6sAYA-
 
 END
 
@@ -427,7 +427,7 @@ END
 
 START:-
 
-[?ai7TbE&c/
+=5V1)6sAYA-0YKb
 
 END
 
@@ -436,7 +436,7 @@ END
 
 START:-
 
-[?ai7TbE&
+=5V1)6sAYA-0
 
 END
 
@@ -445,7 +445,7 @@ END
 
 START:-
 
-[?ai7TbE&c/
+=5V1)6sAYA-0YKb
 
 END
 
@@ -454,7 +454,7 @@ END
 
 START:-
 
-[?ai7TbE&c
+=5V1)6sAYA-0Y
 
 END
 
@@ -463,7 +463,7 @@ END
 
 START:-
 
-[?ai7TbE&c/p
+=5V1)6sAYA-0YKbE
 
 END
 
@@ -472,7 +472,7 @@ END
 
 START:-
 
-[?ai7TbE&c/
+=5V1)6sAYA-0YK
 
 END
 
@@ -482,7 +482,7 @@ Connection closed
 
 START:-
 
-[?ai7TbE&c/p
+=5V1)6sAYA-0YKbE
 
 END
 
@@ -491,7 +491,7 @@ END
 
 START:-
 
-[?ai7TbE&c/p
+=5V1)6sAYA-0YKbE
 
 END
 
