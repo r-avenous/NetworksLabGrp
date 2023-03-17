@@ -4,7 +4,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include "mysocket.h"
+#include "../mysocket.h"
 
 #define PORT 8086
 
@@ -67,8 +67,7 @@ int main(int argc, char const *argv[]) {
     }
 
     // Communication loop
-    int i;
-    for (i = 0; i < 30; i++) {
+    for (int i = 0; i < 30; i++) {
         // Receive message from client
         valread = my_recv(new_socket, buffer, 200, 0);
         printf("%d:: %s\n", i+1, buffer);
