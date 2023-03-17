@@ -3,7 +3,7 @@
 #define TIMEOUT 0.1
 
 int min(int a, int b) {return (a<b)?a:b;}
-char Send_Message[10][MAXMSGSIZE], Recieved_Message[10][MAXMSGSIZE];
+char *Send_Message[10], *Recieved_Message[10];
 int Send_Message_Size[10], Recieved_Message_Size[10];
 pthread_t R, S;
 pthread_mutex_t R_Mutex, S_Mutex;
@@ -17,6 +17,12 @@ int my_socket(int domain, int type, int protocol)
     send_in = 0; send_out = 0;
     recv_in = 0; recv_out = 0;
     sr_socket = -1;
+
+    for(int i=0; i<10; i++)
+    {
+        Send_Message[i] = (char*)malloc(MAXMSGSIZE);
+        Recieved_Message[i] = (char*)malloc(MAXMSGSIZE);
+    }
 
     pthread_create(&R, NULL, RThread, NULL);
     pthread_create(&S, NULL, SThread, NULL);
@@ -227,6 +233,12 @@ void my_close(int sockfd)
     pthread_cond_destroy(&send_cond);
     pthread_cond_destroy(&recv_cond_empt);
     pthread_cond_destroy(&recv_cond_full);
+
+    for(int i=0; i<10; i++) 
+    {
+        free(Send_Message[i]);
+        free(Recieved_Message[i]);
+    }
     close(sockfd);
     
 }

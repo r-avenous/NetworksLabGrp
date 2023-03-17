@@ -142,7 +142,7 @@ END
 
 START:-
 
-~
+=
 
 END
 
@@ -158,7 +158,7 @@ END
 
 START:-
 
-~5
+=
 
 END
 
@@ -175,7 +175,7 @@ END
 
 START:-
 
-~5
+=
 
 END
 
@@ -193,7 +193,7 @@ END
 
 START:-
 
-~5!
+=y
 
 END
 
@@ -202,7 +202,7 @@ END
 
 START:-
 
-~
+w
 
 END
 
@@ -211,7 +211,7 @@ END
 
 START:-
 
-~5!
+wTs4
 
 END
 
@@ -220,7 +220,7 @@ END
 
 START:-
 
-~5
+wT
 
 END
 
@@ -229,7 +229,7 @@ END
 
 START:-
 
-~5! 
+wTs49
 
 END
 
@@ -238,7 +238,7 @@ END
 
 START:-
 
-FL
+wT
 
 END
 
@@ -247,7 +247,7 @@ END
 
 START:-
 
-FL1e|
+wTs49V
 
 END
 
@@ -256,7 +256,7 @@ END
 
 START:-
 
-FL
+wTs
 
 END
 
@@ -265,7 +265,7 @@ END
 
 START:-
 
-FL1e|e
+wTs49V 
 
 END
 
@@ -274,7 +274,7 @@ END
 
 START:-
 
-FL1
+wTs4
 
 END
 
@@ -283,7 +283,7 @@ END
 
 START:-
 
-FL1e|e
+wTs49V 
 
 END
 
@@ -292,7 +292,7 @@ END
 
 START:-
 
-FL1e
+wTs49
 
 END
 
@@ -301,7 +301,7 @@ END
 
 START:-
 
-FL1e|e
+wTs49V k
 
 END
 
@@ -310,7 +310,7 @@ END
 
 START:-
 
-FL1e|
+wTs49V
 
 END
 
@@ -319,7 +319,7 @@ END
 
 START:-
 
-FL1e|e
+wTs49V kM
 
 END
 
@@ -328,7 +328,7 @@ END
 
 START:-
 
-FL1e|e
+wTs49V 
 
 END
 
@@ -337,7 +337,7 @@ END
 
 START:-
 
-FL1e|e
+wTs49V kMS
 
 END
 
@@ -346,7 +346,7 @@ END
 
 START:-
 
-FL1e|e
+wTs49V 
 
 END
 
@@ -355,7 +355,7 @@ END
 
 START:-
 
-FL1e|e~
+wTs49V kMS:
 
 END
 
@@ -364,7 +364,7 @@ END
 
 START:-
 
-FL1e|e
+wTs49V k
 
 END
 
@@ -373,7 +373,7 @@ END
 
 START:-
 
-FL1e|e~z
+wTs49V kMS:|
 
 END
 
@@ -382,7 +382,7 @@ END
 
 START:-
 
-FL1e|e
+wTs49V kM
 
 END
 
@@ -391,7 +391,7 @@ END
 
 START:-
 
-FL1e|e~z1
+[?ai7TbE&c
 
 END
 
@@ -400,7 +400,7 @@ END
 
 START:-
 
-FL1e|e
+[?ai7TbE
 
 END
 
@@ -409,7 +409,7 @@ END
 
 START:-
 
-FL1e|e~z1=
+[?ai7TbE&c/
 
 END
 
@@ -418,7 +418,7 @@ END
 
 START:-
 
-FL1e|e~
+[?ai7TbE&
 
 END
 
@@ -427,7 +427,7 @@ END
 
 START:-
 
-FL1e|e~z1="
+[?ai7TbE&c/
 
 END
 
@@ -436,7 +436,7 @@ END
 
 START:-
 
-:d862T;kv
+[?ai7TbE&
 
 END
 
@@ -445,7 +445,7 @@ END
 
 START:-
 
-:d862T;kvLH
+[?ai7TbE&c/
 
 END
 
@@ -454,7 +454,7 @@ END
 
 START:-
 
-:d862T;kv
+[?ai7TbE&c
 
 END
 
@@ -463,7 +463,7 @@ END
 
 START:-
 
-:d862T;kvLHq
+[?ai7TbE&c/p
 
 END
 
@@ -472,7 +472,7 @@ END
 
 START:-
 
-:d862T;kvL
+[?ai7TbE&c/
 
 END
 
@@ -482,7 +482,7 @@ Connection closed
 
 START:-
 
-:d862T;kvL
+[?ai7TbE&c/p
 
 END
 
@@ -491,8 +491,28 @@ END
 
 START:-
 
-:d862T;kvL
+[?ai7TbE&c/p
 
 END
 
 
+c = 0
+c = 0
+c = 0
+c = 0
+c = 0
+c = 0
+c = 0
+c = 0
+c = 0
+c = 0
+c = 0
+c = 0
+c = 0
+c = 0
+c = 0
+c = 0
+c = 0
+c = 0
+c = 0
+c = 0
