@@ -1,4 +1,4 @@
-test:
+test: ../mysocket.c ../mysocket.h testcli.c testserv.c
 	gcc testserv.c ../mysocket.c -pthread -o ts
 	gcc testcli.c ../mysocket.c -pthread -o tc
 

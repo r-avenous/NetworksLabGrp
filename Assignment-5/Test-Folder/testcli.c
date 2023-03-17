@@ -5,7 +5,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <time.h>
-#include "mysocket.h"
+
+#include "../mysocket.h"
 
 #define PORT 8086
 
@@ -61,23 +62,22 @@ int main(int argc, char const *argv[]) {
     }
 
     // Communication loop
-    // int i;
-    // for (i = 0; i<30; ++i){
-    //     // Send message to server
-    //     strcpy(buffer, generate_random_string(10+i));
-    //     printf("%d:: %s\n",i+1, buffer);
-    //     my_send(sock, buffer, strlen(buffer)+1, 0);
+    for (int i = 0; i<30; ++i){
+        // Send message to server
+        strcpy(buffer, generate_random_string(10+i));
+        printf("%d:: %s\n",i+1, buffer);
+        my_send(sock, buffer, strlen(buffer)+1, 0);
         
-    //     my_recv(sock, buffer, 2024, 0);
-    //     printf("%d:: %s\n",i+1, buffer);
-    // }
-    // fflush(stdout);
+        my_recv(sock, buffer, 2024, 0);
+        printf("%d:: %s\n",i+1, buffer);
+    }
+    fflush(stdout);
     my_recv(sock, buffer, 6000, 0);
     printf("%d:: %s\n",40, buffer);
-    // for(int i=0; i<11; ++i){
-    //     int c = my_send(sock, "yoyoy", 6, 0);
-    //     printf("c = %d\n", c);
-    // }
+    for(int i=0; i<20; ++i){
+        int c = my_send(sock, "yoyoy", 6, 0);
+        printf("c = %d\n", c);
+    }
     my_close(sock);
     return 0;
 }
