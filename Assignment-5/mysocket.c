@@ -224,7 +224,7 @@ int my_recv(int sockfd, char* buf, int len, int flag)
 void my_close(int sockfd)
 {
     if(sockfd != sr_socket) return;
-    sleep(1);
+    sleep(7);
     pthread_cancel(R);
     pthread_cancel(S);
     // for(int i=0; i<10; i++) free(Send_Message[i]);

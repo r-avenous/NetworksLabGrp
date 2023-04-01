@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include "../mysocket.h"
 
-#define PORT 8086
+#define PORT 8085
 
 char* generate_random_string(int length) {
     char* str = malloc((length + 1) * sizeof(char));
@@ -66,24 +66,35 @@ int main(int argc, char const *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    // Communication loop
-    for (int i = 0; i < 30; i++) {
-        // Receive message from client
-        valread = my_recv(new_socket, buffer, 200, 0);
-        printf("%d:: %s\n", i+1, buffer);
+    // // Communication loop
+    // for (int i = 0; i < 9; i++) {
+    //     // Receive message from client
+    //     valread = my_recv(new_socket, buffer, 200, 0);
+    //     printf("%d:: %s\n", i+1, buffer);
 
-        // Send message to client
-        strcpy(buffer, generate_random_string(14+i));
-        my_send(new_socket, buffer, strlen(buffer)+1, 0);
-        printf("%d:: %s\n",i+1, buffer);
+    //     // Send message to client
+    //     strcpy(buffer, generate_random_string(50+i));
+    //     my_send(new_socket, buffer, strlen(buffer)+1, 0);
+    //     printf("%d:: %s\n",i+1, buffer);
 
-        memset(buffer, 0, sizeof(buffer));
-    }
+    //     memset(buffer, 0, sizeof(buffer));
+    // }
 
-    strcpy(buffer, generate_random_string(6000));
+    // strcpy(buffer, generate_random_string(6000));
+    // my_send(new_socket, buffer, strlen(buffer)+1, 0);
+
+    // printf("%d:: %s\n",40, buffer);
+
+    // strcpy(buffer, "hello there");
+    // printf("extra %ld\n", send(new_socket, buffer, strlen(buffer)+1, 0));
+
+
+    strcpy(buffer, "Gaurav");
     my_send(new_socket, buffer, strlen(buffer)+1, 0);
-    printf("%d:: %s\n",40, buffer);
-    printf("extra %d\n", send(new_socket, buffer, strlen(buffer)+1, 0));
+
+
+    strcpy(buffer, "Atulya");
+    my_send(new_socket, buffer, strlen(buffer)+1, 0);
     my_close(new_socket);
     my_close(server_fd);
 
