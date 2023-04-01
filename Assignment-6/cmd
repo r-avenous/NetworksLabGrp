@@ -1,0 +1,3 @@
+gcc pingnetinfo.c ; sudo ./a.out 10.145.201.218 10 10
+
+iitkgp.ac.in 10.3.100.102 
