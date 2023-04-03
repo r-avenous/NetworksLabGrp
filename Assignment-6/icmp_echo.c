@@ -29,8 +29,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    int optval = 1;
-    if(setsockopt(sockfd, IPPROTO_IP, IP_HDRINCL, &optval, sizeof(optval)) < 0) {
+    int optval = 3;
+    if(setsockopt(sockfd, IPPROTO_IP, IP_TTL, &optval, sizeof(optval)) < 0) {
         perror("setsockopt() error");
         exit(EXIT_FAILURE);
     }
@@ -61,7 +61,7 @@ void setIP(struct iphdr *ip_hdr, char *ip_addr) {
     ip_hdr->tot_len = htons(PACKET_SIZE);
     ip_hdr->id = htons(0);
     ip_hdr->frag_off = htons(0);
-    ip_hdr->ttl = 255;
+    ip_hdr->ttl = 1;
     ip_hdr->protocol = IPPROTO_ICMP;
     ip_hdr->check = 0;
     ip_hdr->saddr = INADDR_ANY;
@@ -86,11 +86,11 @@ void send_packet(int sockfd, char *ip_addr, char *data) {
     dest_addr.sin_addr = *((struct in_addr *)he->h_addr);
 
     char packet[PACKET_SIZE];
-    struct iphdr *ip_hdr = (struct iphdr *)packet;
-    setIP(ip_hdr, ip_addr);
+    // struct iphdr *ip_hdr = (struct iphdr *)packet;
+    // setIP(ip_hdr, ip_addr);
 
-    struct icmp *icmp_hdr = (struct icmp *)(packet+4*ip_hdr->ihl);
-    setICMP(icmp_hdr, data, PACKET_SIZE-4*ip_hdr->ihl);
+    struct icmp *icmp_hdr = (struct icmp *)(packet/*+4*ip_hdr->ihl*/);
+    setICMP(icmp_hdr, data, PACKET_SIZE/*-4*ip_hdr->ihl*/);
 
     if (sendto(sockfd, packet, PACKET_SIZE, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr)) < 0) {
         perror("sendto"); return;
