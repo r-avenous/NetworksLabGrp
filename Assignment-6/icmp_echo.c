@@ -10,6 +10,7 @@
 #include <sys/time.h>
 
 #define PACKET_SIZE 64
+#define h_addr h_addr_list[0]
 
 unsigned short in_cksum(unsigned short *ptr, int nbytes);
 void receive_packet(int sockfd);
