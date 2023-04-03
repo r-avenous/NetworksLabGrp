@@ -29,17 +29,18 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    int optval = 3;
-    if(setsockopt(sockfd, IPPROTO_IP, IP_TTL, &optval, sizeof(optval)) < 0) {
+    int optval = 1;
+    if(setsockopt(sockfd, IPPROTO_IP, IP_HDRINCL, &optval, sizeof(optval)) < 0) {
         perror("setsockopt() error");
         exit(EXIT_FAILURE);
     }
 
-    char *ip_addr = argv[1];
+    char *temp = argv[1];
+    char *ip_addr = (char *)malloc(strlen(temp)+1);
+    strcpy(ip_addr, temp);
     char *msg = "HELLO THERE!";
     send_packet(sockfd, ip_addr, msg);
     printf("Packet Sent!\n");
-
 
     receive_packet(sockfd);
 }
@@ -54,7 +55,7 @@ void setICMP(struct icmp *icmp_hdr, char *data, int size) {
     icmp_hdr->icmp_cksum = in_cksum((unsigned short *)icmp_hdr, size);    // 20 is ip header size
 }
 
-void setIP(struct iphdr *ip_hdr, char *ip_addr) {
+void setIP(struct iphdr *ip_hdr, struct sockaddr_in *dest_addr) {
     ip_hdr->ihl = 5;
     ip_hdr->version = 4;
     ip_hdr->tos = 0;
@@ -65,7 +66,7 @@ void setIP(struct iphdr *ip_hdr, char *ip_addr) {
     ip_hdr->protocol = IPPROTO_ICMP;
     ip_hdr->check = 0;
     ip_hdr->saddr = INADDR_ANY;
-    ip_hdr->daddr = inet_addr(ip_addr);
+    ip_hdr->daddr = dest_addr->sin_addr.s_addr;
 
     ip_hdr->check = in_cksum((unsigned short *)ip_hdr, 4*ip_hdr->ihl);
 }
@@ -86,26 +87,28 @@ void send_packet(int sockfd, char *ip_addr, char *data) {
     dest_addr.sin_addr = *((struct in_addr *)he->h_addr);
 
     char packet[PACKET_SIZE];
-    // struct iphdr *ip_hdr = (struct iphdr *)packet;
-    // setIP(ip_hdr, ip_addr);
+    struct iphdr *ip_hdr = (struct iphdr *)packet;
+    setIP(ip_hdr, &dest_addr);
 
-    struct icmp *icmp_hdr = (struct icmp *)(packet/*+4*ip_hdr->ihl*/);
-    setICMP(icmp_hdr, data, PACKET_SIZE/*-4*ip_hdr->ihl*/);
+    struct icmp *icmp_hdr = (struct icmp *)(packet+4*ip_hdr->ihl);
+    setICMP(icmp_hdr, data, PACKET_SIZE-4*ip_hdr->ihl);
 
     if (sendto(sockfd, packet, PACKET_SIZE, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr)) < 0) {
         perror("sendto"); return;
     }
 
+    printf("Destination IP: %s\n", inet_ntoa(dest_addr.sin_addr));
+
 }
 
 void receive_packet(int sockfd) {
-    struct timeval timeout;
-    timeout.tv_sec = 3;
-    timeout.tv_usec = 0;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
-        perror("setsockopt");
-        return;
-    }
+    // struct timeval timeout;
+    // timeout.tv_sec = 3;
+    // timeout.tv_usec = 0;
+    // if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+    //     perror("setsockopt");
+    //     return;
+    // }
     char buf[PACKET_SIZE];
     struct sockaddr_in src_addr;
     socklen_t src_addr_len = sizeof(src_addr);
