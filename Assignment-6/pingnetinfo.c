@@ -10,8 +10,16 @@
 #include <sys/time.h>
 #include <time.h>
 
-#define PACKET_SIZE 64
+#define MAX_PACKET_SIZE 64
 #define h_addr h_addr_list[0]
+
+// clock_t start_time, end_time;
+struct timeval start_time, end_time;
+   
+
+
+
+
 
 unsigned short in_cksum(unsigned short *ptr, int nbytes);
 void receive_packet(int sockfd);
@@ -42,7 +50,7 @@ int main(int argc, char *argv[])
     char *temp = argv[1];
     char *ip_addr = (char *)malloc(strlen(temp)+1);
     strcpy(ip_addr, temp);
-    char *msg = "HELLO THERE!";
+    char *msg = "100 Length String";
     send_packet(sockfd, ip_addr, msg);
     printf("Packet Sent!\n"); fflush(stdout);
 
@@ -68,7 +76,7 @@ void setIP(struct iphdr *ip_hdr, struct sockaddr_in *dest_addr, int ttl)
     ip_hdr->ihl = 5;
     ip_hdr->version = 4;
     ip_hdr->tos = 0;
-    ip_hdr->tot_len = htons(PACKET_SIZE);
+    ip_hdr->tot_len = htons(MAX_PACKET_SIZE);
     ip_hdr->id = htons(0);
     ip_hdr->frag_off = htons(0);
     ip_hdr->ttl = ttl;
@@ -96,17 +104,20 @@ void send_packet(int sockfd, char *ip_addr, char *data)
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_addr = *((struct in_addr *)he->h_addr);
 
-    char packet[PACKET_SIZE];
+    char packet[MAX_PACKET_SIZE];
     struct iphdr *ip_hdr = (struct iphdr *)packet;
     setIP(ip_hdr, &dest_addr, 7);
 
     
 
-    setICMP(packet+4*ip_hdr->ihl, data, PACKET_SIZE-4*ip_hdr->ihl);
+    setICMP(packet+4*ip_hdr->ihl, data, MAX_PACKET_SIZE-4*ip_hdr->ihl);
 
-    if (sendto(sockfd, packet, PACKET_SIZE, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr)) < 0) {
+    //start_time = clock();
+    if (sendto(sockfd, packet, MAX_PACKET_SIZE, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr)) < 0) {
         perror("sendto"); return;
     }
+    // record start time
+    gettimeofday(&start_time, NULL);
 
     printf("Destination IP: %s\n", inet_ntoa(dest_addr.sin_addr));
 }
@@ -114,20 +125,28 @@ void send_packet(int sockfd, char *ip_addr, char *data)
 void receive_packet(int sockfd) 
 {
 
-    char buf[PACKET_SIZE];
+    char buf[MAX_PACKET_SIZE];
     struct sockaddr_in src_addr;
     socklen_t src_addr_len = sizeof(src_addr);
 
-    clock_t start_time = clock();
-    int bytes = recvfrom(sockfd, buf, PACKET_SIZE, 0, (struct sockaddr *)&src_addr, &src_addr_len);
+    
+    int bytes = recvfrom(sockfd, buf, MAX_PACKET_SIZE, 0, (struct sockaddr *)&src_addr, &src_addr_len);
     if (bytes < 0) {
         perror("recvfrom error");
         return;
     }
-    clock_t end_time = clock();
+    //end_time = clock();
 
-    int time_taken = (end_time - start_time)/(CLOCKS_PER_SEC/1000000);
-    printf("\nReceived %d bytes from %s  Time Taken = %d microseconds\n", bytes, inet_ntoa(src_addr.sin_addr), time_taken);
+        // record end time
+    gettimeofday(&end_time, NULL);
+
+    // calculate time taken in microseconds
+    long time_taken = (end_time.tv_sec - start_time.tv_sec) * 1000000 + (end_time.tv_usec - start_time.tv_usec);
+
+    printf("Time taken by the function: %ld microseconds\n", time_taken);
+
+    // int time_taken = (end_time - start_time)/(CLOCKS_PER_SEC/1000000);
+    // printf("\nReceived %d bytes from %s  Time Taken = %d microseconds\n", bytes, inet_ntoa(src_addr.sin_addr), time_taken);
 
     struct iphdr *ip_hdr = (struct iphdr *)buf;
     struct icmphdr *icmp_hdr = (struct icmphdr *)(buf + (ip_hdr->ihl * 4));
