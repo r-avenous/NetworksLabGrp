@@ -9,31 +9,30 @@
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <time.h>
+#include <sys/resource.h>
 
-#define MAX_PACKET_SIZE 64
+int MAX_PACKET_SIZE = 28;
 #define h_addr h_addr_list[0]
+char HUNDREDCHARS[100] = {'a'};
 
 // clock_t start_time, end_time;
 struct timeval start_time, end_time;
-   
-
-
-
+struct timespec start, end;   
 
 
 unsigned short in_cksum(unsigned short *ptr, int nbytes);
-void receive_packet(int sockfd);
-void send_packet(int sockfd, char *ip_addr, char *data);
+long receive_packet(int sockfd, char *add);
+void send_packet(int sockfd, char *data, struct sockaddr_in dest_addr, int ttl);
+
 
 int main(int argc, char *argv[]) 
 {
+    int T = 1, n = 5;
     if (argc < 2) 
     {
         printf("Usage: %s <ip_address>\n", argv[0]);
         return 1;
     }
-
-
     int sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     if (sockfd < 0) 
     {
@@ -42,19 +41,49 @@ int main(int argc, char *argv[])
     }
 
     int optval = 1;
-    if(setsockopt(sockfd, IPPROTO_IP, IP_HDRINCL, &optval, sizeof(optval)) < 0) {
+    if(setsockopt(sockfd, IPPROTO_IP, IP_HDRINCL, &optval, sizeof(optval)) < 0) 
+    {
         perror("setsockopt() error");
         exit(EXIT_FAILURE);
     }
 
-    char *temp = argv[1];
-    char *ip_addr = (char *)malloc(strlen(temp)+1);
-    strcpy(ip_addr, temp);
-    char *msg = "100 Length String";
-    send_packet(sockfd, ip_addr, msg);
-    printf("Packet Sent!\n"); fflush(stdout);
+    struct hostent *he = gethostbyname(argv[1]);
+    if (he == NULL) 
+    {
+        perror("gethostbyname");
+    }
+    printf("Target IP: %s\n\n", inet_ntoa(*((struct in_addr *)he->h_addr)));
 
-    receive_packet(sockfd);
+    struct sockaddr_in dest_addr;
+    memset(&dest_addr, 0, sizeof(dest_addr));
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_addr = *((struct in_addr *)he->h_addr);
+
+    char add[100][100], destAdd[100];
+    long zeroDataTTL[100], hundredDataTTL[100];
+    int hop = 0;
+    sprintf(destAdd, "%s", inet_ntoa(dest_addr.sin_addr));
+    
+    for(int i = 0; i < 64; i++)
+    {
+        send_packet(sockfd, NULL, dest_addr, i+1);
+        receive_packet(sockfd, add[hop++]);
+        printf("Hop %d: %s\n", i+1, add[hop-1]);
+        if(strcmp(add[hop-1], destAdd) == 0) break;
+    }
+    for(int i=0; i<hop; i++)
+    {
+        memset(&dest_addr, 0, sizeof(dest_addr));
+        dest_addr.sin_family = AF_INET;
+        dest_addr.sin_addr.s_addr = inet_addr(add[i]);
+        send_packet(sockfd, NULL, dest_addr, 64);
+        char a[100];
+        zeroDataTTL[i] = receive_packet(sockfd, a);
+        send_packet(sockfd, HUNDREDCHARS, dest_addr, 64);
+        hundredDataTTL[i] = receive_packet(sockfd, a);
+        // printf("a: %s\n", a);
+        printf("%ld\n", hundredDataTTL[i] - zeroDataTTL[i]);
+    }
 }
 
 void setICMP(char *buf, char *data, int size) 
@@ -65,14 +94,12 @@ void setICMP(char *buf, char *data, int size)
     icmp_hdr->un.echo.id = getpid();
     icmp_hdr->un.echo.sequence = 1;
     icmp_hdr->checksum = 0;
-    memcpy(buf+sizeof(struct icmphdr), data, strlen(data)+1);
-
+    if(data != NULL) memcpy(buf+sizeof(struct icmphdr), data, strlen(data)+1);
     icmp_hdr->checksum = in_cksum((unsigned short *)icmp_hdr, size);    // 20 is ip header size
 }
 
 void setIP(struct iphdr *ip_hdr, struct sockaddr_in *dest_addr, int ttl) 
 {
-    
     ip_hdr->ihl = 5;
     ip_hdr->version = 4;
     ip_hdr->tos = 0;
@@ -84,29 +111,17 @@ void setIP(struct iphdr *ip_hdr, struct sockaddr_in *dest_addr, int ttl)
     ip_hdr->check = 0;
     ip_hdr->saddr = INADDR_ANY;
     ip_hdr->daddr = dest_addr->sin_addr.s_addr;
-
     ip_hdr->check = in_cksum((unsigned short *)ip_hdr, 4*ip_hdr->ihl);
 }
 
-
-void send_packet(int sockfd, char *ip_addr, char *data) 
+void send_packet(int sockfd, char *data, struct sockaddr_in dest_addr, int ttl) 
 {
-    struct hostent *he = gethostbyname(ip_addr);
-    if (he == NULL) {
-        perror("gethostbyname"); return;
-    }
-
-    // print host ip
-    printf("Sending to IP: %s\n", inet_ntoa(*((struct in_addr *)he->h_addr)));
-
-    struct sockaddr_in dest_addr;
-    memset(&dest_addr, 0, sizeof(dest_addr));
-    dest_addr.sin_family = AF_INET;
-    dest_addr.sin_addr = *((struct in_addr *)he->h_addr);
+    if(data != NULL) MAX_PACKET_SIZE = 28 + strlen(data) + 1;
+    else MAX_PACKET_SIZE = 28;
 
     char packet[MAX_PACKET_SIZE];
     struct iphdr *ip_hdr = (struct iphdr *)packet;
-    setIP(ip_hdr, &dest_addr, 7);
+    setIP(ip_hdr, &dest_addr, ttl);
 
     
 
@@ -117,43 +132,41 @@ void send_packet(int sockfd, char *ip_addr, char *data)
         perror("sendto"); return;
     }
     // record start time
-    gettimeofday(&start_time, NULL);
+    // gettimeofday(&start_time, NULL);
+    clock_gettime(CLOCK_MONOTONIC, &start);
 
-    printf("Destination IP: %s\n", inet_ntoa(dest_addr.sin_addr));
+    // printf("Destination IP: %s\n", inet_ntoa(dest_addr.sin_addr));
 }
 
-void receive_packet(int sockfd) 
+long receive_packet(int sockfd, char *add) 
 {
-
     char buf[MAX_PACKET_SIZE];
     struct sockaddr_in src_addr;
     socklen_t src_addr_len = sizeof(src_addr);
 
     
     int bytes = recvfrom(sockfd, buf, MAX_PACKET_SIZE, 0, (struct sockaddr *)&src_addr, &src_addr_len);
-    if (bytes < 0) {
+    if (bytes < 0) 
+    {
         perror("recvfrom error");
-        return;
+        return -1;
     }
-    //end_time = clock();
+    
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    long time_taken = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec)/1000;
 
-        // record end time
-    gettimeofday(&end_time, NULL);
-
-    // calculate time taken in microseconds
-    long time_taken = (end_time.tv_sec - start_time.tv_sec) * 1000000 + (end_time.tv_usec - start_time.tv_usec);
-
-    printf("Time taken by the function: %ld microseconds\n", time_taken);
-
-    // int time_taken = (end_time - start_time)/(CLOCKS_PER_SEC/1000000);
-    // printf("\nReceived %d bytes from %s  Time Taken = %d microseconds\n", bytes, inet_ntoa(src_addr.sin_addr), time_taken);
-
+    // printf("Time taken by the function: %ld microseconds\n", time_taken);
+    
     struct iphdr *ip_hdr = (struct iphdr *)buf;
     struct icmphdr *icmp_hdr = (struct icmphdr *)(buf + (ip_hdr->ihl * 4));
 
     char *data = buf + (ip_hdr->ihl * 4) + sizeof(struct icmphdr);
-    printf("Received Message: %s\n", data);
-
+    // printf("%d\n", ip_hdr->ihl * 4 + sizeof(struct icmphdr));
+    // printf("Received Message: %s\n", data);
+    // print sender 
+    // printf("Sender IP: %s\n", inet_ntoa(src_addr.sin_addr));
+    sprintf(add, "%s", inet_ntoa(src_addr.sin_addr));
+    return time_taken;
 }
 
 unsigned short in_cksum(unsigned short *ptr, int nbytes) 
