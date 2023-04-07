@@ -13,7 +13,7 @@
 
 int MAX_PACKET_SIZE = 28;
 #define h_addr h_addr_list[0]
-char HUNDREDCHARS[100] = {'a'};
+char *chunk;
 
 // clock_t start_time, end_time;
 struct timeval start_time, end_time;
@@ -27,6 +27,10 @@ void send_packet(int sockfd, char *data, struct sockaddr_in dest_addr, int ttl);
 
 int main(int argc, char *argv[]) 
 {
+    chunk = (char *)malloc(1000);
+    memset(chunk, 'a', 1000);
+    chunk[999] = '\0';
+
     int T = 1, n = 5;
     if (argc < 2) 
     {
@@ -60,7 +64,7 @@ int main(int argc, char *argv[])
     dest_addr.sin_addr = *((struct in_addr *)he->h_addr);
 
     char add[100][100], destAdd[100];
-    long zeroDataTTL[100], hundredDataTTL[100];
+    long noDataRTT[100], withDataRTT[100];
     int hop = 0;
     sprintf(destAdd, "%s", inet_ntoa(dest_addr.sin_addr));
     
@@ -78,11 +82,11 @@ int main(int argc, char *argv[])
         dest_addr.sin_addr.s_addr = inet_addr(add[i]);
         send_packet(sockfd, NULL, dest_addr, 64);
         char a[100];
-        zeroDataTTL[i] = receive_packet(sockfd, a);
-        send_packet(sockfd, HUNDREDCHARS, dest_addr, 64);
-        hundredDataTTL[i] = receive_packet(sockfd, a);
+        noDataRTT[i] = receive_packet(sockfd, a);
+        send_packet(sockfd, chunk, dest_addr, 64);
+        withDataRTT[i] = receive_packet(sockfd, a);
         // printf("a: %s\n", a);
-        printf("%ld\n", hundredDataTTL[i] - zeroDataTTL[i]);
+        printf("%ld\n", withDataRTT[i] - noDataRTT[i]);
     }
 }
 
