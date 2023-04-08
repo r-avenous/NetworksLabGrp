@@ -41,7 +41,7 @@ void getAvgRTT(int sockfd,  char *destIP, long *empty_RTT, long *data_RTT){
     *empty_RTT = 0; *data_RTT = 0;
     char currIP[20];
     int icmp_type;
-    for(int i=0; i<5; ++i){
+    for(int i=0; i<20; ++i){
         send_packet(sockfd, NULL, dest_addr, 64);
         *empty_RTT += receive_packet(sockfd, currIP, &icmp_type);
         
@@ -50,8 +50,8 @@ void getAvgRTT(int sockfd,  char *destIP, long *empty_RTT, long *data_RTT){
         usleep(10000);  //sleep for 10 miliseconds
     }
 
-    *empty_RTT /= 5;
-    *data_RTT /= 5;
+    *empty_RTT /= 20;
+    *data_RTT /= 20;
     
 
 }
