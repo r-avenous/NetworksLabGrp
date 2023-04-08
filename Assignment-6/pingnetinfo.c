@@ -10,21 +10,17 @@
 #include <sys/time.h>
 #include <time.h>
 
-#define MAX_PACKET_SIZE 64
+#define MAX_PACKET_SIZE 1024
 #define h_addr h_addr_list[0]
 
 // clock_t start_time, end_time;
 struct timeval start_time, end_time;
    
 
-
-
-
-
 unsigned short in_cksum(unsigned short *ptr, int nbytes);
 void receive_packet(int sockfd);
 void send_packet(int sockfd, char *ip_addr, char *data);
-
+ 
 int main(int argc, char *argv[]) 
 {
     if (argc < 2) 
@@ -50,7 +46,12 @@ int main(int argc, char *argv[])
     char *temp = argv[1];
     char *ip_addr = (char *)malloc(strlen(temp)+1);
     strcpy(ip_addr, temp);
-    char *msg = "100 Length String";
+    char msg[700];
+    for(int i = 0; i < 700; i++)
+    {
+        msg[i] = (char)('0' + i%10);
+        if(i%10==0) msg[i] = ' ';
+    }
     send_packet(sockfd, ip_addr, msg);
     printf("Packet Sent!\n"); fflush(stdout);
 
@@ -106,7 +107,7 @@ void send_packet(int sockfd, char *ip_addr, char *data)
 
     char packet[MAX_PACKET_SIZE];
     struct iphdr *ip_hdr = (struct iphdr *)packet;
-    setIP(ip_hdr, &dest_addr, 7);
+    setIP(ip_hdr, &dest_addr, 4);
 
     
 
@@ -146,7 +147,7 @@ void receive_packet(int sockfd)
     printf("Time taken by the function: %ld microseconds\n", time_taken);
 
     // int time_taken = (end_time - start_time)/(CLOCKS_PER_SEC/1000000);
-    // printf("\nReceived %d bytes from %s  Time Taken = %d microseconds\n", bytes, inet_ntoa(src_addr.sin_addr), time_taken);
+    printf("\nReceived %d bytes from %s\n", bytes, inet_ntoa(src_addr.sin_addr));
 
     struct iphdr *ip_hdr = (struct iphdr *)buf;
     struct icmphdr *icmp_hdr = (struct icmphdr *)(buf + (ip_hdr->ihl * 4));
@@ -171,11 +172,11 @@ unsigned short in_cksum(unsigned short *ptr, int nbytes)
     if (nbytes == 1) {
         oddbyte = 0;
         *((unsigned char *)&oddbyte) = *(unsigned char *)ptr;
-        sum += oddbyte;
+        sum += *(unsigned char *)ptr; //oddbyte;
     }
 
     sum = (sum >> 16) + (sum & 0xFFFF);
-    sum += (sum >> 16);
+    sum = (sum >> 16) + (sum & 0xFFFF);
     answer = (unsigned short)~sum;
 
     return answer;
