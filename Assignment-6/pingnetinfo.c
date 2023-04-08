@@ -11,11 +11,11 @@
 #include <time.h>
 #include <sys/resource.h>
 
-int MAX_PACKET_SIZE = 28;
+#define MAX_PACKET_SIZE 1500
 #define h_addr h_addr_list[0]
 
 // clock_t start_time, end_time;
-// struct timeval start_time, end_time;
+struct timeval start_time, end_time;
 struct timespec start, end;   
 
 
@@ -27,27 +27,31 @@ void send_packet(int sockfd, char *data, struct sockaddr_in dest_addr, int ttl);
 
 
 
-long getAvgRTT(int sockfd, int data_len, char *destIP){
-    char *data = NULL;
-    if(data_len>0){
-        data = (char *)malloc(data_len*sizeof(char));
-        memset(data, 'a', data_len);
-    }
+void getAvgRTT(int sockfd,  char *destIP, long *empty_RTT, long *data_RTT){
+    char chunk[1024];
+    memset(chunk, 'a', 1023); chunk[1023] = '\0';
+
+    char small_chunk[64];
+    memset(small_chunk, 'a', 63); small_chunk[63] = '\0';
 
     struct sockaddr_in dest_addr;
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_addr.s_addr = inet_addr(destIP);
 
-    long RTTsum=0, currRTT=0;
+    *empty_RTT = 0; *data_RTT = 0;
     char currIP[20];
     int icmp_type;
     for(int i=0; i<5; ++i){
-        send_packet(sockfd, data, dest_addr, 64);
-        currRTT = receive_packet(sockfd, currIP, &icmp_type);
-        RTTsum += currRTT;
+        send_packet(sockfd, NULL, dest_addr, 64);
+        *empty_RTT += receive_packet(sockfd, currIP, &icmp_type);
+        
+        send_packet(sockfd, chunk, dest_addr, 64);
+        *data_RTT += receive_packet(sockfd, currIP, &icmp_type);
         usleep(10000);  //sleep for 10 miliseconds
     }
-    return RTTsum/5;
+
+    *empty_RTT /= 5;
+    *data_RTT /= 5;
     
 
 }
@@ -76,8 +80,8 @@ int main(int argc, char *argv[])
         printf("Hop %d: %s\t", ttl, currIP);
         
 
-        curr_empty_RTT = getAvgRTT(sockfd, 0, currIP);
-        curr_data_RTT = getAvgRTT(sockfd, 1024, currIP);
+        getAvgRTT(sockfd, currIP, &curr_empty_RTT, &curr_data_RTT);
+
 
         printf("noDataRTT: %ld\t", curr_empty_RTT);
         printf("withDataRTT: %ld\t", curr_data_RTT);
@@ -86,8 +90,8 @@ int main(int argc, char *argv[])
         link_data_RTT = curr_data_RTT - prev_data_RTT;
         
         
-        printf("Latency: %lf\t", link_empty_RTT/1000.0);
-        printf("Bandwidth: %lf\t", (1024*8*1000.0)/(link_data_RTT-link_empty_RTT));
+        printf("Latency: %lf ms\t", link_empty_RTT/1000.0);
+        printf("Bandwidth: %lf Mbps\t", (1024*8.0)/(link_data_RTT-link_empty_RTT));
         
         print_ICMP_type(icmp_type);
         printf("\n");
