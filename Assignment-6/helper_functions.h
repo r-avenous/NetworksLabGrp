@@ -213,6 +213,16 @@ long receive_packet(int sockfd, char *add, int *icmp_reply)
         print_icmp_header(icmp_hdr);
         *icmp_reply = icmp_hdr->type;
     }
+    else if(ip_hdr->protocol == IPPROTO_UDP) {
+        struct udphdr *udp_hdr = (struct udphdr *)(buf + (ip_hdr->ihl * 4));
+        // print udp data
+        printf("UDP Data: %s\n", buf + (ip_hdr->ihl * 4) + sizeof(struct udphdr));
+    }
+    else if(ip_hdr->protocol == IPPROTO_TCP) {
+        struct tcphdr *tcp_hdr = (struct tcphdr *)(buf + (ip_hdr->ihl * 4));
+        // print tcp data
+        printf("TCP Data: %s\n", buf + (ip_hdr->ihl * 4) + sizeof(struct tcphdr));
+    }
 
 
     char *data = buf + (ip_hdr->ihl * 4) + sizeof(struct icmphdr);
