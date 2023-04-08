@@ -1,4 +1,8 @@
 
+long min(long a, long b){
+    return a<b?a:b;
+}
+
 int create_socket()
 {
     int sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
@@ -22,6 +26,7 @@ struct sockaddr_in getDestAddr(char *arg){
     struct hostent *he = gethostbyname(arg);
     if (he == NULL) {
         perror("gethostbyname");
+        exit(EXIT_FAILURE);
     }
     char destIP[20];
     strcpy(destIP, inet_ntoa(*((struct in_addr *)he->h_addr)));
@@ -131,7 +136,7 @@ void setIP(struct iphdr *ip_hdr, struct sockaddr_in *dest_addr, int packet_size,
 {
     ip_hdr->ihl = 5;
     ip_hdr->version = 4;
-    ip_hdr->tos = IPTOS_LOWDELAY;
+    ip_hdr->tos = 0;
     ip_hdr->tot_len = htons(packet_size);
     ip_hdr->id = htons(0);
     ip_hdr->frag_off = htons(0);
@@ -177,11 +182,11 @@ long receive_packet(int sockfd, char *add, int *icmp_reply)
     struct sockaddr_in src_addr;
     socklen_t src_addr_len = sizeof(src_addr);
 
-    // poll for 5 seconds
+    // poll for 2 seconds
     struct pollfd fds[1];
     fds[0].fd = sockfd;
     fds[0].events = POLLIN;
-    int ret = poll(fds, 1, 5000);
+    int ret = poll(fds, 1, 2000);
     if (ret == 0) {
         // printf("Timeout\n");
         return -1;

@@ -28,7 +28,7 @@ int send_packet(int sockfd, char *data, struct sockaddr_in dest_addr, int ttl);
 
 int T = 1, n = 40;
 
-void getAvgRTT(int sockfd,  char *destIP, long *empty_RTT, long *data_RTT){
+void getMinRTT(int sockfd,  char *destIP, long *empty_RTT, long *data_RTT){
     char chunk[500];
     memset(chunk, 'a', 499); chunk[499] = '\0';
 
@@ -39,20 +39,17 @@ void getAvgRTT(int sockfd,  char *destIP, long *empty_RTT, long *data_RTT){
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_addr.s_addr = inet_addr(destIP);
 
-    *empty_RTT = 0; *data_RTT = 0;
+    *empty_RTT = 1e9; *data_RTT = 1e9;
     char currIP[20];
     int icmp_type;
     for(int i=0; i<n; ++i){
         
         send_packet(sockfd, chunk, dest_addr, 64);
-        *data_RTT += receive_packet(sockfd, currIP, &icmp_type);
+        *data_RTT = min(receive_packet(sockfd, currIP, &icmp_type), *data_RTT);
         send_packet(sockfd, NULL, dest_addr, 64);
-        *empty_RTT += receive_packet(sockfd, currIP, &icmp_type);
+        *empty_RTT = min(receive_packet(sockfd, currIP, &icmp_type), *empty_RTT);
         usleep(T*1000);  //sleep for T miliseconds
     }
-
-    *empty_RTT /= n;
-    *data_RTT /= n;
     
 
 }
@@ -72,25 +69,51 @@ int main(int argc, char *argv[])
 
     long prev_empty_RTT=0, prev_data_RTT=0;
     long curr_empty_RTT, curr_data_RTT, link_empty_RTT, link_data_RTT;
-    char currIP[20];
+    char currIP[20], prevIP[20];
     int icmp_type;
 
     for(int ttl = 1; ttl <= 64; ttl++)
     {
-        if(send_packet(sockfd, NULL, dest_addr, ttl) < 0)
+        int counter = 0, errorCounter = 0;
+        while(1)
         {
-            printf("* * *\n");
-            continue;
-        }
-        if(receive_packet(sockfd, currIP, &icmp_type) < 0)
-        {
-            printf("* * *\n");
-            continue;
+            if(errorCounter == 5)
+            {
+                printf(" * * *\n");
+                exit(0);
+            }
+            if(send_packet(sockfd, NULL, dest_addr, ttl) < 0)
+            {
+                // printf("* * *\n");
+                errorCounter++;
+                continue;
+            }
+            if(receive_packet(sockfd, currIP, &icmp_type) < 0)
+            {
+                // printf("* * *\n");
+                errorCounter++;
+                continue;
+            }
+            if(strcmp(currIP, prevIP) == 0)
+            {
+                counter++;
+                if(counter == 5)
+                {
+                    break;
+                }
+            }
+            else
+            {
+                counter = 1;
+                strcpy(prevIP, currIP);
+            }
+            // usleep(1000);
+            sleep(1);
         }
         printf("Hop %d: %s\t", ttl, currIP);
         
 
-        getAvgRTT(sockfd, currIP, &curr_empty_RTT, &curr_data_RTT);
+        getMinRTT(sockfd, currIP, &curr_empty_RTT, &curr_data_RTT);
 
 
         printf("noDataRTT: %ld\t", curr_empty_RTT);
