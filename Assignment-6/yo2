@@ -1,0 +1,4 @@
+noDataRTT: 830	withDataRTT: 1437	Latency: 0.415000 ms	Bandwidth: 26.991763 Mbps	ICMP_TIME_EXCEEDED
+noDataRTT: 710	withDataRTT: 2522	Latency: -0.060000 ms	Bandwidth: 13.596680 Mbps	ICMP_TIME_EXCEEDED
+noDataRTT: 556	withDataRTT: 1012	Latency: -0.077000 ms	Bandwidth: -12.082596 Mbps	ICMP_TIME_EXCEEDED
+noDataRTT: 394	withDataRTT: 576	Latency: -0.081000 ms	Bandwidth: -59.795620 Mbps	ICMP_ECHOREPLY

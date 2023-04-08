@@ -12,7 +12,7 @@
 #include <sys/resource.h>
 #include <poll.h>
 
-#define MAX_PACKET_SIZE 1500
+#define MAX_PACKET_SIZE 576
 #define h_addr h_addr_list[0]
 
 // clock_t start_time, end_time;
@@ -29,8 +29,8 @@ int send_packet(int sockfd, char *data, struct sockaddr_in dest_addr, int ttl);
 int T = 1, n = 40;
 
 void getAvgRTT(int sockfd,  char *destIP, long *empty_RTT, long *data_RTT){
-    char chunk[1024];
-    memset(chunk, 'a', 1023); chunk[1023] = '\0';
+    char chunk[500];
+    memset(chunk, 'a', 499); chunk[499] = '\0';
 
     char small_chunk[64];
     memset(small_chunk, 'a', 63); small_chunk[63] = '\0';

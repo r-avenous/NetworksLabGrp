@@ -127,12 +127,12 @@ void setICMP(char *buf, char *data, int size)
 
 
 
-void setIP(struct iphdr *ip_hdr, struct sockaddr_in *dest_addr, int ttl) 
+void setIP(struct iphdr *ip_hdr, struct sockaddr_in *dest_addr, int packet_size, int ttl) 
 {
     ip_hdr->ihl = 5;
     ip_hdr->version = 4;
     ip_hdr->tos = IPTOS_LOWDELAY;
-    ip_hdr->tot_len = htons(MAX_PACKET_SIZE);
+    ip_hdr->tot_len = htons(packet_size);
     ip_hdr->id = htons(0);
     ip_hdr->frag_off = htons(0);
     ip_hdr->ttl = ttl;
@@ -151,7 +151,7 @@ int send_packet(int sockfd, char *data, struct sockaddr_in dest_addr, int ttl)
 
     char packet[packet_size];
     struct iphdr *ip_hdr = (struct iphdr *)packet;
-    setIP(ip_hdr, &dest_addr, ttl);
+    setIP(ip_hdr, &dest_addr, packet_size, ttl);
 
     
 
@@ -197,16 +197,17 @@ long receive_packet(int sockfd, char *add, int *icmp_reply)
     }
     
     long time_taken = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec)/1000;
-    // long time_taken = (end_time.tv_sec - start_time.tv_sec) * 1000000 + (end_time.tv_usec - start_time.tv_usec);
-
-    // printf("Time taken by the function: %ld microseconds\n", time_taken);
     
     struct iphdr *ip_hdr = (struct iphdr *)buf;
-    struct icmphdr *icmp_hdr = (struct icmphdr *)(buf + (ip_hdr->ihl * 4));
 
     printf("\n\n******* Received Packet Headers ********\n");
     print_ip_header(ip_hdr);
-    print_icmp_header(icmp_hdr);
+
+    if(ip_hdr->protocol == IPPROTO_ICMP) {
+        struct icmphdr *icmp_hdr = (struct icmphdr *)(buf + (ip_hdr->ihl * 4));
+        print_icmp_header(icmp_hdr);
+        *icmp_reply = icmp_hdr->type;
+    }
 
 
     char *data = buf + (ip_hdr->ihl * 4) + sizeof(struct icmphdr);
@@ -215,7 +216,6 @@ long receive_packet(int sockfd, char *add, int *icmp_reply)
     // print sender 
     // printf("Sender IP: %s\n", inet_ntoa(src_addr.sin_addr));
     sprintf(add, "%s", inet_ntoa(src_addr.sin_addr));
-    *icmp_reply = icmp_hdr->type;
     return time_taken;
 }
 
