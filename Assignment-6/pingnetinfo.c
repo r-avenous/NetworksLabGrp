@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <sys/resource.h>
+#include <poll.h>
 
 #define MAX_PACKET_SIZE 1500
 #define h_addr h_addr_list[0]
@@ -21,11 +22,11 @@ struct timespec start, end;
 
 unsigned short in_cksum(unsigned short *ptr, int nbytes);
 long receive_packet(int sockfd, char *add, int *icmp_reply);
-void send_packet(int sockfd, char *data, struct sockaddr_in dest_addr, int ttl);
+int send_packet(int sockfd, char *data, struct sockaddr_in dest_addr, int ttl);
 
 #include "helper_functions.h"
 
-
+int T = 1, n = 40;
 
 void getAvgRTT(int sockfd,  char *destIP, long *empty_RTT, long *data_RTT){
     char chunk[1024];
@@ -41,29 +42,30 @@ void getAvgRTT(int sockfd,  char *destIP, long *empty_RTT, long *data_RTT){
     *empty_RTT = 0; *data_RTT = 0;
     char currIP[20];
     int icmp_type;
-    for(int i=0; i<20; ++i){
-        send_packet(sockfd, NULL, dest_addr, 64);
-        *empty_RTT += receive_packet(sockfd, currIP, &icmp_type);
+    for(int i=0; i<n; ++i){
         
         send_packet(sockfd, chunk, dest_addr, 64);
         *data_RTT += receive_packet(sockfd, currIP, &icmp_type);
-        usleep(10000);  //sleep for 10 miliseconds
+        send_packet(sockfd, NULL, dest_addr, 64);
+        *empty_RTT += receive_packet(sockfd, currIP, &icmp_type);
+        usleep(1000);  //sleep for 10 miliseconds
     }
 
-    *empty_RTT /= 20;
-    *data_RTT /= 20;
+    *empty_RTT /= n;
+    *data_RTT /= n;
     
 
 }
 
-int T = 1, n = 5;
 int main(int argc, char *argv[]) 
 {
-    if (argc < 2) {
-        printf("Usage: %s <ip_address>\n", argv[0]);
+    if (argc != 4) {
+        printf("Usage: %s <ip_address> <n> <T>\n", argv[0]);
         return 1;
     }
 
+    n = atoi(argv[2]);
+    T = atoi(argv[3]);
 
     int sockfd = create_socket();
     struct sockaddr_in dest_addr = getDestAddr(argv[1]);
@@ -75,8 +77,16 @@ int main(int argc, char *argv[])
 
     for(int ttl = 1; ttl <= 64; ttl++)
     {
-        send_packet(sockfd, NULL, dest_addr, ttl);
-        receive_packet(sockfd, currIP, &icmp_type);
+        if(send_packet(sockfd, NULL, dest_addr, ttl) < 0)
+        {
+            printf("* * *\n");
+            continue;
+        }
+        if(receive_packet(sockfd, currIP, &icmp_type) < 0)
+        {
+            printf("* * *\n");
+            continue;
+        }
         printf("Hop %d: %s\t", ttl, currIP);
         
 
@@ -90,8 +100,8 @@ int main(int argc, char *argv[])
         link_data_RTT = curr_data_RTT - prev_data_RTT;
         
         
-        printf("Latency: %lf ms\t", link_empty_RTT/1000.0);
-        printf("Bandwidth: %lf Mbps\t", (1024*8.0)/(link_data_RTT-link_empty_RTT));
+        printf("Latency: %lf ms\t", (link_empty_RTT/1000.0)/2);
+        printf("Bandwidth: %lf Mbps\t", (1024*8.0*2)/(link_data_RTT-link_empty_RTT));
         
         print_ICMP_type(icmp_type);
         printf("\n");

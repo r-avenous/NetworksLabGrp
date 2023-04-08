@@ -75,7 +75,7 @@ void setIP(struct iphdr *ip_hdr, struct sockaddr_in *dest_addr, int ttl)
     ip_hdr->check = in_cksum((unsigned short *)ip_hdr, 4*ip_hdr->ihl);
 }
 
-void send_packet(int sockfd, char *data, struct sockaddr_in dest_addr, int ttl) 
+int send_packet(int sockfd, char *data, struct sockaddr_in dest_addr, int ttl) 
 {
     int packet_size;
     if(data != NULL) packet_size = 28 + strlen(data) + 1;
@@ -93,11 +93,10 @@ void send_packet(int sockfd, char *data, struct sockaddr_in dest_addr, int ttl)
     clock_gettime(CLOCK_MONOTONIC, &start);
     // gettimeofday(&start_time, NULL);
     if (sendto(sockfd, packet, packet_size, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr)) < 0) {
-        perror("sendto"); return;
+        perror("sendto"); 
+        return -1;
     }
-    // record start time
-
-    // printf("Destination IP: %s\n", inet_ntoa(dest_addr.sin_addr));
+    return 0;
 }
 
 long receive_packet(int sockfd, char *add, int *icmp_reply) 
@@ -106,15 +105,25 @@ long receive_packet(int sockfd, char *add, int *icmp_reply)
     struct sockaddr_in src_addr;
     socklen_t src_addr_len = sizeof(src_addr);
 
-    
+    // poll for 5 seconds
+    struct pollfd fds[1];
+    fds[0].fd = sockfd;
+    fds[0].events = POLLIN;
+    int ret = poll(fds, 1, 5000);
+    if (ret == 0) {
+        // printf("Timeout\n");
+        return -1;
+    }
+
     int bytes = recvfrom(sockfd, buf, MAX_PACKET_SIZE, 0, (struct sockaddr *)&src_addr, &src_addr_len);
-    if (bytes < 0) 
+    // gettimeofday(&end_time, NULL);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    if (bytes <= 0) 
     {
         perror("recvfrom error");
         return -1;
     }
-    // gettimeofday(&end_time, NULL);
-    clock_gettime(CLOCK_MONOTONIC, &end);
+    
     long time_taken = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec)/1000;
     // long time_taken = (end_time.tv_sec - start_time.tv_sec) * 1000000 + (end_time.tv_usec - start_time.tv_usec);
 
