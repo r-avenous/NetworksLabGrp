@@ -69,8 +69,13 @@ int main(int argc, char *argv[])
 
     long prev_empty_RTT=0, prev_data_RTT=0;
     long curr_empty_RTT, curr_data_RTT, link_empty_RTT, link_data_RTT;
-    char currIP[20], prevIP[20];
+    char currIP[20], prevIP[20], prevHop[20];
+    // get IP address of this host
+    sprintf(prevHop, "This Host");
     int icmp_type;
+
+    char results[100000];
+    sprintf(results, "\n");
 
     for(int ttl = 1; ttl <= 64; ttl++)
     {
@@ -94,6 +99,10 @@ int main(int argc, char *argv[])
                 errorCounter++;
                 continue;
             }
+            if(icmp_type == ICMP_ECHOREPLY)
+            {
+                break;
+            }
             if(strcmp(currIP, prevIP) == 0)
             {
                 counter++;
@@ -110,21 +119,21 @@ int main(int argc, char *argv[])
             // usleep(1000);
             sleep(1);
         }
-        printf("Hop %d: %s\t", ttl, currIP);
+        sprintf(results + strlen(results), "Hop %d: %s\t\nLink:\t%s\t->\t%s\t|\t", ttl, currIP, prevHop, currIP);
         
 
         getMinRTT(sockfd, currIP, &curr_empty_RTT, &curr_data_RTT);
 
 
-        printf("noDataRTT: %ld\t", curr_empty_RTT);
-        printf("withDataRTT: %ld\t", curr_data_RTT);
+        // printf("noDataRTT: %ld\t", curr_empty_RTT);
+        // printf("withDataRTT: %ld\t", curr_data_RTT);
 
         link_empty_RTT = curr_empty_RTT - prev_empty_RTT;
         link_data_RTT = curr_data_RTT - prev_data_RTT;
         
         
-        printf("Latency: %lf ms\t", (link_empty_RTT/1000.0)/2);
-        printf("Bandwidth: %lf Mbps\t", (1024*8.0*2)/(link_data_RTT-link_empty_RTT));
+        sprintf(results + strlen(results), "Latency: %lf ms\t", (link_empty_RTT/1000.0)/2);
+        sprintf(results + strlen(results), "Bandwidth: %lf Mbps\t\n", (1024*8.0*2)/(link_data_RTT-link_empty_RTT));
         
         print_ICMP_type(icmp_type);
         printf("\n");
@@ -132,10 +141,12 @@ int main(int argc, char *argv[])
         prev_empty_RTT = curr_empty_RTT;
         prev_data_RTT = curr_data_RTT;
 
-
+        strcpy(prevHop, currIP);
         
         if(icmp_type==ICMP_ECHOREPLY) break;
     }
+
+    printf("\n%s\n", results);
 
     close(sockfd);
 
