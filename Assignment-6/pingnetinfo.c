@@ -1,3 +1,7 @@
+// Assignment 6
+// 20CS10012 Atulya Sharma
+// 20CS10029 Gaurav Malakar
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
