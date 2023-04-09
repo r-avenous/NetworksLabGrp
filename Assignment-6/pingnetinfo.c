@@ -345,17 +345,19 @@ int main(int argc, char *argv[])
     char results[100000];
     sprintf(results, "\n");
 
-    int unreachable_int_node = 0;
+    int currentNodeUnreachable = 0, prevNodeUnreachable = 0;
     for(int ttl = 1; ttl <= 30; ttl++)
     {
         int counter = 0, errorCounter = 0;
+        prevNodeUnreachable = currentNodeUnreachable;
+        currentNodeUnreachable = 0;
         while(1)
         {
             if(errorCounter == 5)
             {
-                printf("****** No response found received *******\n");
-                strcpy(currIP, "*******");
-                unreachable_int_node = 1;
+                printf("****** No response received *******\n");
+                strcpy(currIP, "Unreachable");
+                currentNodeUnreachable = 1;
                 break;
                 
             }
@@ -386,10 +388,15 @@ int main(int argc, char *argv[])
                 counter = 1;
                 strcpy(prevIP, currIP);
             }
-            //sleep(1);
+            sleep(1);
         }
         sprintf(results + strlen(results), "Hop %d: %s\t\n", ttl, currIP);
-        if(unreachable_int_node) continue;
+        if(currentNodeUnreachable || prevNodeUnreachable) 
+        {
+            if(icmp_type==ICMP_ECHOREPLY) break;
+            sprintf(results + strlen(results), "Link latency/bandwidth cannot be calculated due to unreachable neighbour\n\n");
+            continue;
+        }
         sprintf(results + strlen(results), "Link:\t%s\t->\t%s\t|\t",prevHop, currIP);
         
 
@@ -402,7 +409,7 @@ int main(int argc, char *argv[])
         
         
         sprintf(results + strlen(results), "Latency: %lf ms\t", (link_empty_RTT/1000.0)/2);
-        sprintf(results + strlen(results), "Bandwidth: %lf Mbps\t\n", (1024*8.0*2)/(link_data_RTT-link_empty_RTT));
+        sprintf(results + strlen(results), "Bandwidth: %lf Mbps\t\n\n", (1024*8.0*2)/(link_data_RTT-link_empty_RTT));
         
         print_ICMP_type(icmp_type);
         printf("\n");
