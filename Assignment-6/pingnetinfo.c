@@ -137,6 +137,7 @@ void print_ip_header(struct iphdr *ip) {
     printf("  Source Address: %s\n", inet_ntoa(*(struct in_addr *)&ip->saddr));
     printf("  Destination Address: %s\n", inet_ntoa(*(struct in_addr *)&ip->daddr));
     printf("\n");
+    fflush(stdout);
 }
 
 void print_icmp_header(struct icmphdr *icmp) {
@@ -147,6 +148,7 @@ void print_icmp_header(struct icmphdr *icmp) {
     printf("  Identifier: %d\n", ntohs(icmp->un.echo.id));
     printf("  Sequence Number: %d\n", ntohs(icmp->un.echo.sequence));
     printf("\n\n");
+    fflush(stdout);
 }
 
 void setICMP(char *buf, char *data, int size) 
@@ -314,7 +316,7 @@ void getMinRTT(int sockfd,  char *destIP, long *empty_RTT, long *data_RTT){
         *data_RTT = min(receive_packet(sockfd, currIP, &icmp_type), *data_RTT);
         send_packet(sockfd, NULL, dest_addr, 64);
         *empty_RTT = min(receive_packet(sockfd, currIP, &icmp_type), *empty_RTT);
-        sleep(T);  //sleep for T miliseconds
+        sleep(T);  //sleep for T seconds
     }
     
 
@@ -343,25 +345,27 @@ int main(int argc, char *argv[])
     char results[100000];
     sprintf(results, "\n");
 
-    for(int ttl = 1; ttl <= 64; ttl++)
+    int unreachable_int_node = 0;
+    for(int ttl = 1; ttl <= 30; ttl++)
     {
         int counter = 0, errorCounter = 0;
         while(1)
         {
             if(errorCounter == 5)
             {
-                printf("\n%s\nUnreachable, quitting since latency/ bandwidth cannot be calculated without an intermediate node\n", results);
-                exit(0);
+                printf("****** No response found received *******\n");
+                strcpy(currIP, "*******");
+                unreachable_int_node = 1;
+                break;
+                
             }
             if(send_packet(sockfd, NULL, dest_addr, ttl) < 0)
             {
-                // printf("* * *\n");
                 errorCounter++;
                 continue;
             }
             if(receive_packet(sockfd, currIP, &icmp_type) < 0)
             {
-                // printf("* * *\n");
                 errorCounter++;
                 continue;
             }
@@ -382,17 +386,16 @@ int main(int argc, char *argv[])
                 counter = 1;
                 strcpy(prevIP, currIP);
             }
-            // usleep(1000);
-            sleep(1);
+            //sleep(1);
         }
-        sprintf(results + strlen(results), "Hop %d: %s\t\nLink:\t%s\t->\t%s\t|\t", ttl, currIP, prevHop, currIP);
+        sprintf(results + strlen(results), "Hop %d: %s\t\n", ttl, currIP);
+        if(unreachable_int_node) continue;
+        sprintf(results + strlen(results), "Link:\t%s\t->\t%s\t|\t",prevHop, currIP);
         
 
         getMinRTT(sockfd, currIP, &curr_empty_RTT, &curr_data_RTT);
 
 
-        // printf("noDataRTT: %ld\t", curr_empty_RTT);
-        // printf("withDataRTT: %ld\t", curr_data_RTT);
 
         link_empty_RTT = curr_empty_RTT - prev_empty_RTT;
         link_data_RTT = curr_data_RTT - prev_data_RTT;
